@@ -1,4 +1,4 @@
-const CACHE = "tr-portfolio-v2";
+const CACHE = "tr-portfolio-v5";
 const ASSETS = [
   "./",
   "./index.html",
@@ -24,11 +24,12 @@ self.addEventListener("activate", event => {
 
 self.addEventListener("fetch", event => {
   const url = new URL(event.request.url);
+
   if (url.hostname.includes("twelvedata.com")) return;
 
   if (event.request.mode === "navigate") {
     event.respondWith(
-      fetch(event.request)
+      fetch(event.request, {cache:"no-store"})
         .then(resp => {
           const copy = resp.clone();
           caches.open(CACHE).then(cache => cache.put("./index.html", copy));
@@ -40,6 +41,12 @@ self.addEventListener("fetch", event => {
   }
 
   event.respondWith(
-    caches.match(event.request).then(cached => cached || fetch(event.request))
+    fetch(event.request)
+      .then(resp => {
+        const copy = resp.clone();
+        caches.open(CACHE).then(cache => cache.put(event.request, copy));
+        return resp;
+      })
+      .catch(() => caches.match(event.request))
   );
 });
