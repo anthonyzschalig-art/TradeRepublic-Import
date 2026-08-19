@@ -1,4 +1,4 @@
-const CACHE="tr-now-real-spy-v1";
+const CACHE="tr-3stocks-spy-v1";
 self.addEventListener("install",e=>{
  e.waitUntil(caches.open(CACHE).then(c=>c.addAll(["./","./index.html","./manifest.json"])));
  self.skipWaiting();
@@ -11,8 +11,8 @@ self.addEventListener("fetch",e=>{
  const u=new URL(e.request.url);
  if(u.hostname.includes("twelvedata.com"))return;
  if(e.request.mode==="navigate"){
-   e.respondWith(fetch(e.request,{cache:"no-store"}).catch(()=>caches.match("./index.html")));
-   return;
+  e.respondWith(fetch(e.request,{cache:"no-store"}).catch(()=>caches.match("./index.html")));
+  return;
  }
  e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));
 });
