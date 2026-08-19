@@ -1,1 +1,9 @@
-{"name":"ServiceNow NOW vs SPY","short_name":"NOW vs SPY","start_url":"./","scope":"./","display":"standalone","background_color":"#f1f5f9","theme_color":"#0f172a"}
+{
+  "name": "ServiceNow vs SPY Yahoo Test",
+  "short_name": "NOW vs SPY",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f1f5f9",
+  "theme_color": "#0f172a"
+}

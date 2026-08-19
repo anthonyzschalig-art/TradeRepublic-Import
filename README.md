@@ -1,23 +1,25 @@
-# TR Portfolio Tracker
+# Trade Republic Yahoo Worker Test
 
-Dateien in ein GitHub-Repository hochladen und GitHub Pages aktivieren.
+## GitHub Pages
+Ersetze in deinem bestehenden GitHub-Pages-Repository:
+- index.html
+- manifest.json
+- service-worker.js
 
-## GitHub Pages aktivieren
-1. Repository öffnen
-2. Settings
-3. Pages
-4. Source: Deploy from a branch
-5. Branch: main
-6. Ordner: / (root)
-7. Save
+## Cloudflare Worker
+Lege einen neuen Cloudflare Worker an und ersetze dessen Code komplett durch:
+- cloudflare-worker.js
 
-Danach die von GitHub angezeigte Pages-URL in Safari öffnen.
+Deploye den Worker. Du erhältst danach eine URL wie:
+https://tr-yahoo-proxy.DEINNAME.workers.dev
 
-Auf dem iPhone:
-Safari → Teilen → Zum Home-Bildschirm
+Diese URL trägst du in der App unter "Cloudflare Worker URL" ein.
 
-Hinweis:
-- Die Trade-Republic-CSV wird lokal im Browser verarbeitet.
-- Der CSV-Inhalt wird nicht zu GitHub hochgeladen.
-- Für Kursdaten kommuniziert die App mit Twelve Data.
-- Der API-Key wird standardmäßig nur für die Browser-Sitzung gespeichert.
+## Datenschutz
+Die Trade-Republic-CSV bleibt vollständig im Browser.
+An den Worker werden nur Ticker und Datum geschickt, z. B.:
+- NOW
+- SPY
+- 2026-01-15
+
+Keine Stückzahlen, Beträge oder Portfolioinformationen werden übertragen.
