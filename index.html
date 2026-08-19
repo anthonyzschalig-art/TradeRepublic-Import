@@ -4,687 +4,145 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="TR Tracker">
+<meta name="apple-mobile-web-app-title" content="TR API Test">
 <link rel="manifest" href="./manifest.json">
-<link rel="apple-touch-icon" href="./apple-touch-icon.png">
 <meta name="theme-color" content="#0f172a">
-<title>TR Portfolio Tracker</title>
+<title>TR API Test</title>
 <style>
-:root{
- --bg:#f1f5f9;--card:#fff;--txt:#0f172a;--muted:#64748b;--line:#e2e8f0;
- --accent:#2563eb;--good:#15803d;--bad:#b91c1c;--soft:#f8fafc;--warn:#92400e
-}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-.wrap{max-width:820px;margin:auto;padding:18px 13px 45px}
-h1{font-size:26px;margin:6px 0 4px}.subtitle{font-size:13px;color:var(--muted);line-height:1.4;margin-bottom:16px}
-.card{background:var(--card);border-radius:17px;padding:16px;margin-bottom:14px;box-shadow:0 2px 12px rgba(15,23,42,.05)}
-h2{font-size:18px;margin:0 0 12px}h3{font-size:16px;margin:0}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.full{grid-column:1/-1}
-label{display:block;color:var(--muted);font-size:12px;margin-bottom:5px}
-input,button,select{font:inherit;width:100%;border-radius:10px}
-input,select{padding:11px 12px;border:1px solid var(--line);background:#fff;font-size:16px}
-button{border:0;padding:12px 13px;font-weight:650;cursor:pointer}
-.primary{background:var(--accent);color:#fff}.secondary{background:#e2e8f0;color:var(--txt)}
-button:disabled{opacity:.45}
-.metrics{display:grid;grid-template-columns:1fr 1fr;gap:9px}
-.metric{background:var(--soft);border-radius:12px;padding:12px}.k{font-size:11px;color:var(--muted)}.v{font-size:20px;font-weight:750;margin-top:3px}
-.good{color:var(--good)}.bad{color:var(--bad)}.warn{color:var(--warn)}
-.status{font-size:13px;margin-top:10px;line-height:1.45;min-height:18px}
-.section{border-top:1px solid var(--line);padding:14px 0}.section:first-child{border-top:0;padding-top:0}
-.rowhead{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
-.name{font-weight:750;font-size:17px}.meta{font-size:12px;color:var(--muted);line-height:1.45;margin-top:3px}
-.three{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
-.box{background:var(--soft);padding:10px;border-radius:10px}.box .v{font-size:15px}
-.pill{display:inline-block;background:#eff6ff;color:#1d4ed8;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:650;margin-top:6px}
-.mapitem{border-top:1px solid var(--line);padding:12px 0}.mapitem:first-child{border-top:0}
-.mapgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
-.note{font-size:12px;color:var(--muted);line-height:1.45}
-.hidden{display:none!important}
-.filelabel{display:block;background:var(--accent);color:#fff;text-align:center;padding:13px;border-radius:11px;font-weight:700;cursor:pointer}
-#csvFile{display:none}
-.smallbtn{font-size:12px;padding:8px 10px;width:auto}
-.details{margin-top:10px;font-size:12px;color:var(--muted)}
-details summary{cursor:pointer;font-weight:650;color:var(--txt)}
-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
-td,th{padding:7px 5px;border-bottom:1px solid var(--line);text-align:right}td:first-child,th:first-child{text-align:left}
-@media(max-width:580px){.grid,.metrics,.three,.mapgrid{grid-template-columns:1fr}.v{font-size:18px}}
+body{margin:0;background:#f1f5f9;color:#0f172a;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.wrap{max-width:760px;margin:auto;padding:18px 14px 45px}
+.card{background:#fff;border-radius:17px;padding:16px;margin-bottom:14px;box-shadow:0 2px 12px rgba(15,23,42,.05)}
+h1{font-size:25px;margin:4px 0}.sub,.note,.status,.meta{font-size:13px;color:#64748b;line-height:1.45}
+h2{font-size:18px;margin:0 0 12px}
+label{display:block;font-size:12px;color:#64748b;margin-bottom:5px}
+input,button{font:inherit;width:100%;border-radius:11px}
+input{padding:11px 12px;border:1px solid #e2e8f0;font-size:16px}
+button{border:0;padding:12px 14px;font-weight:700}.primary{background:#2563eb;color:white}.secondary{background:#e2e8f0}
+.filelabel{display:block;background:#2563eb;color:#fff;text-align:center;padding:13px;border-radius:11px;font-weight:700}
+#csvFile{display:none}.hidden{display:none}.good{color:#15803d}.bad{color:#b91c1c}
+.result{border-top:1px solid #e2e8f0;padding:14px 0}.result:first-child{border-top:0}
+.name{font-size:18px;font-weight:750}.grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}
+.box{background:#f8fafc;border-radius:11px;padding:11px}.k{font-size:11px;color:#64748b}.v{font-size:17px;font-weight:750;margin-top:3px}
+.log{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;white-space:pre-wrap;background:#0f172a;color:#e2e8f0;border-radius:11px;padding:12px;max-height:260px;overflow:auto}
+@media(max-width:560px){.grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <div class="wrap">
-<h1>Trade Republic Portfolio</h1>
-<div class="subtitle">CSV importieren → ETFs einzeln auswerten → alle Einzelaktien gemeinsam mit einem World-ETF vergleichen.</div>
+<h1>Trade Republic · API-Test</h1>
+<div class="sub">Nur ServiceNow und ein ETF werden abgefragt.</div>
 
 <div class="card">
-<h2>1 · Trade-Republic-Export</h2>
+<h2>1 · API-Key</h2>
+<label>Twelve Data API-Key</label>
+<input id="apiKey" type="password" autocomplete="off">
+<button class="secondary" id="saveKey" style="margin-top:10px">Für diese Sitzung speichern</button>
+<div id="keyStatus" class="status"></div>
+</div>
+
+<div class="card">
+<h2>2 · Trade-Republic-CSV</h2>
 <label class="filelabel" for="csvFile">Transaktionsexport.csv auswählen</label>
 <input id="csvFile" type="file" accept=".csv,text/csv">
 <div id="fileStatus" class="status"></div>
 </div>
 
-<div class="card">
-<h2>2 · Kursdaten</h2>
-<div class="grid">
- <div class="full">
-  <label>Twelve Data API-Key</label>
-  <input id="apiKey" type="password" placeholder="API-Key einmalig einfügen" autocomplete="off">
- </div>
- <div class="full">
-  <label style="display:flex;align-items:center;gap:8px;color:var(--txt);font-size:13px">
-   <input id="rememberKey" type="checkbox" style="width:auto">
-   API-Key auf diesem Gerät dauerhaft speichern
-  </label>
- </div>
- <div>
-  <label>World-ETF Benchmark</label>
-  <input id="benchSymbol" value="EUNL">
- </div>
- <div>
-  <label>Benchmark-Börse</label>
-  <input id="benchExchange" value="XETR">
- </div>
- <div class="full"><button class="secondary" id="saveSettings">Einstellungen speichern</button></div>
-</div>
-<p class="note">Voreinstellung: iShares Core MSCI World UCITS ETF über eine EUR-Notierung. Der API-Key wird standardmäßig nur für die aktuelle Browser-Sitzung gespeichert. Nur wenn du die Checkbox aktivierst, wird er dauerhaft im lokalen Browserspeicher abgelegt.</p>
+<div class="card hidden" id="selectionCard">
+<h2>3 · Test</h2>
+<div id="selectionText" class="note"></div>
+<button class="primary" id="runTest" style="margin-top:12px">ServiceNow + ETF testen</button>
+<div id="runStatus" class="status"></div>
 </div>
 
-<div class="card hidden" id="mappingCard">
-<h2>3 · Erkannte Wertpapiere</h2>
-<div class="note">Die App sucht automatisch eine passende Börsennotierung. Bereits früher gefundene Zuordnungen werden wiederverwendet. EUR-Notierungen werden bevorzugt.</div>
-<div class="actions">
- <button class="secondary smallbtn" id="retryMissing">Nur fehlende Zuordnungen erneut suchen</button>
-</div>
-<div id="mappingList"></div>
-<button class="primary" id="loadPrices">Kurse laden & auswerten</button>
-<div id="priceStatus" class="status"></div>
-</div>
+<div class="card hidden" id="resultsCard"><h2>Ergebnis</h2><div id="results"></div></div>
 
-<div class="card hidden" id="stockCard">
-<h2>Einzelaktien · Gesamt</h2>
-<div class="metrics">
- <div class="metric"><div class="k">Käufe inkl. Gebühren</div><div class="v" id="stockBuys">–</div></div>
- <div class="metric"><div class="k">Aktueller Bestand</div><div class="v" id="stockValue">–</div></div>
- <div class="metric"><div class="k">Aktien-Gesamtperformance</div><div class="v" id="stockPerf">–</div></div>
- <div class="metric"><div class="k">World-ETF Vergleich</div><div class="v" id="benchPerf">–</div></div>
- <div class="metric full"><div class="k">Out-/Underperformance</div><div class="v" id="alpha">–</div></div>
-</div>
-<div class="three">
- <div class="box"><div class="k">Realisierte Verkaufserlöse</div><div class="v" id="stockSells">–</div></div>
- <div class="box"><div class="k">Dividenden netto</div><div class="v" id="stockDivs">–</div></div>
- <div class="box"><div class="k">Gewinn / Verlust gesamt</div><div class="v" id="stockPL">–</div></div>
-</div>
-<details class="details">
-<summary>Berechnung anzeigen</summary>
-<p>Bei jedem Aktienkauf wird derselbe eingesetzte Betrag virtuell in den World-ETF investiert. Bei einem Aktienverkauf wird derselbe Anteil der zugehörigen virtuellen ETF-Position verkauft. Offene Positionen werden mit den aktuellen Kursen bewertet. Dividenden sowie Gebühren/Steuern werden bei den Aktien berücksichtigt.</p>
-</details>
-</div>
-
-<div class="card hidden" id="etfCard">
-<h2>ETFs · einzeln</h2>
-<div id="etfList"></div>
-</div>
-
-<div class="card hidden" id="otherCard">
-<h2>Nicht einbezogen</h2>
-<div id="otherText" class="note"></div>
-</div>
-
-<div class="card hidden" id="txCard">
-<details>
-<summary>Importierte Transaktionen</summary>
-<div style="overflow:auto"><table id="txTable"></table></div>
-</details>
-</div>
+<div class="card"><h2>API-Protokoll</h2><div id="log" class="log">Noch keine API-Anfrage.</div></div>
 </div>
 
 <script>
-const SKEY="tr_tracker_settings_v3";
-const MKEY="tr_tracker_mapping_v8";
-
-function loadMappings(){
-  const v5=JSON.parse(localStorage.getItem("tr_tracker_mapping_v5")||"{}");
-  const v6=JSON.parse(localStorage.getItem("tr_tracker_mapping_v6")||"{}");
-  const v7=JSON.parse(localStorage.getItem("tr_tracker_mapping_v7")||"{}");
-  const v8=JSON.parse(localStorage.getItem(MKEY)||"{}");
-
-  const merged={...v5};
-
-  for(const [id,val] of Object.entries(v6)){
-    merged[id]={...(merged[id]||{}),...val};
-  }
-  for(const [id,val] of Object.entries(v7)){
-    merged[id]={...(merged[id]||{}),...val};
-  }
-  for(const [id,val] of Object.entries(v8)){
-    merged[id]={...(merged[id]||{}),...val};
-  }
-
-  localStorage.setItem(MKEY,JSON.stringify(merged));
-  return merged;
-}
-
-let rows=[], instruments={}, mapping=loadMappings();
-let currentPrices={}, benchmarkSeries=[], benchmarkCurrent=null;
-
+let rows=[],serviceNow=null,selectedETF=null,apiCalls=0;
 const $=id=>document.getElementById(id);
-const money=x=>Number(x||0).toLocaleString("de-DE",{style:"currency",currency:"EUR"});
-const pct=x=>Number(x||0).toLocaleString("de-DE",{minimumFractionDigits:2,maximumFractionDigits:2})+" %";
-const color=(el,x)=>{el.classList.remove("good","bad");el.classList.add(x>=0?"good":"bad")};
-const n=v=>{if(v===null||v===undefined||v==="")return 0;let x=parseFloat(String(v).replace(",","."));return Number.isFinite(x)?x:0};
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
-
+const n=v=>{let x=parseFloat(String(v??"").replace(",","."));return Number.isFinite(x)?x:0};
+const money=x=>Number(x||0).toLocaleString("de-DE",{style:"currency",currency:"EUR"});
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+function log(msg){const e=$("log");if(e.textContent==="Noch keine API-Anfrage.")e.textContent="";e.textContent+="["+new Date().toLocaleTimeString("de-DE")+"] "+msg+"\n";e.scrollTop=e.scrollHeight}
 function parseCSV(text){
- let out=[], row=[], cur="", quote=false;
- for(let i=0;i<text.length;i++){
-  const c=text[i], next=text[i+1];
-  if(c=='"'){
-   if(quote && next=='"'){cur+='"';i++} else quote=!quote;
-  } else if(c==',' && !quote){row.push(cur);cur=""}
-  else if((c=='\n'||c=='\r')&&!quote){
-   if(c=='\r'&&next=='\n')i++;
-   row.push(cur);cur="";
-   if(row.some(x=>x!==""))out.push(row);
-   row=[];
-  } else cur+=c;
- }
+ let out=[],row=[],cur="",quote=false;
+ for(let i=0;i<text.length;i++){const c=text[i],next=text[i+1];
+  if(c==='"'){if(quote&&next==='"'){cur+='"';i++}else quote=!quote}
+  else if(c===','&&!quote){row.push(cur);cur=""}
+  else if((c==='\n'||c==='\r')&&!quote){if(c==='\r'&&next==='\n')i++;row.push(cur);cur="";if(row.some(x=>x!==""))out.push(row);row=[]}
+  else cur+=c}
  if(cur||row.length){row.push(cur);out.push(row)}
  if(out.length<2)return [];
  const head=out[0].map(x=>x.trim());
  return out.slice(1).map(r=>Object.fromEntries(head.map((h,i)=>[h,r[i]??""])));
 }
-
-function loadSettings(){
- let persistent=JSON.parse(localStorage.getItem(SKEY)||"{}");
- let sessionKey=sessionStorage.getItem("tr_tracker_api_key")||"";
- $("apiKey").value=persistent.apiKey||sessionKey||"";
- $("rememberKey").checked=Boolean(persistent.apiKey);
- $("benchSymbol").value=persistent.benchSymbol||"EUNL";
- $("benchExchange").value=persistent.benchExchange||"XETR";
-}
-function saveSettings(){
- const apiKey=$("apiKey").value.trim();
- const remember=$("rememberKey").checked;
- const s={
-   benchSymbol:$("benchSymbol").value.trim().toUpperCase(),
-   benchExchange:$("benchExchange").value.trim().toUpperCase()
- };
- if(remember && apiKey){
-   s.apiKey=apiKey;
-   localStorage.setItem(SKEY,JSON.stringify(s));
-   sessionStorage.removeItem("tr_tracker_api_key");
- }else{
-   localStorage.setItem(SKEY,JSON.stringify(s));
-   if(apiKey) sessionStorage.setItem("tr_tracker_api_key",apiKey);
-   else sessionStorage.removeItem("tr_tracker_api_key");
- }
- return {...s,apiKey};
-}
-
-$("saveSettings").onclick=()=>{
- const s=saveSettings();
- $("priceStatus").textContent=$("rememberKey").checked
-   ?"Einstellungen gespeichert. API-Key wird lokal auf diesem Gerät gespeichert."
-   :"Einstellungen gespeichert. API-Key gilt nur für diese Browser-Sitzung.";
-};
-
+function apiKey(){return $("apiKey").value.trim()||sessionStorage.getItem("tr_api_test_key")||""}
+$("saveKey").onclick=()=>{const k=$("apiKey").value.trim();if(!k){$("keyStatus").innerHTML='<span class="bad">Bitte API-Key eingeben.</span>';return}sessionStorage.setItem("tr_api_test_key",k);$("keyStatus").innerHTML='<span class="good">Gespeichert.</span>'}
+window.addEventListener("load",()=>{const k=sessionStorage.getItem("tr_api_test_key");if(k)$("apiKey").value=k})
 $("csvFile").addEventListener("change",async e=>{
  const f=e.target.files[0];if(!f)return;
  try{
-  const text=await f.text(); rows=parseCSV(text);
-  if(!rows.length||!("asset_class" in rows[0])||!("type" in rows[0]))throw new Error("CSV-Format nicht erkannt.");
-  rows.sort((a,b)=>(a.datetime||a.date).localeCompare(b.datetime||b.date));
-  buildInstruments();
-  $("fileStatus").innerHTML=`<span class="good">${rows.length} Transaktionen erkannt.</span> ${Object.keys(instruments).length} Aktien/ETFs gefunden.`;
-  $("mappingCard").classList.remove("hidden");$("txCard").classList.remove("hidden");
-  renderTransactions();
-  await autoResolve();
- }catch(err){$("fileStatus").innerHTML=`<span class="bad">${esc(err.message)}</span>`}
+  rows=parseCSV(await f.text());
+  const pos={};
+  for(const r of rows){if(!["STOCK","FUND"].includes(r.asset_class)||!r.symbol)continue;
+   if(!pos[r.symbol])pos[r.symbol]={isin:r.symbol,name:r.name||r.symbol,asset_class:r.asset_class,shares:0};
+   if(r.type==="BUY"||r.type==="SELL")pos[r.symbol].shares+=n(r.shares)}
+  const open=Object.values(pos).filter(x=>Math.abs(x.shares)>1e-8);
+  serviceNow=open.find(x=>x.asset_class==="STOCK"&&/service\s*now/i.test(x.name));
+  selectedETF=open.find(x=>x.asset_class==="FUND");
+  if(!serviceNow)throw new Error("ServiceNow nicht gefunden.");
+  if(!selectedETF)throw new Error("Kein offener ETF gefunden.");
+  $("selectionText").innerHTML="<b>Aktie:</b> "+esc(serviceNow.name)+"<br><b>ETF:</b> "+esc(selectedETF.name);
+  $("selectionCard").classList.remove("hidden");
+  $("fileStatus").innerHTML='<span class="good">CSV geladen.</span>';
+ }catch(err){$("fileStatus").innerHTML='<span class="bad">'+esc(err.message)+'</span>'}
 });
-
-$("retryMissing").onclick=async()=>{
- if(!Object.keys(instruments).length){
-   $("priceStatus").textContent="Bitte zuerst den Trade-Republic-Export auswählen.";
-   return;
- }
- await autoResolve();
-};
-
-function buildInstruments(){
- instruments={};
- for(const r of rows){
-  if(!["STOCK","FUND"].includes(r.asset_class))continue;
-  if(!r.symbol)continue;
-  if(!instruments[r.symbol])instruments[r.symbol]={isin:r.symbol,name:r.name||r.symbol,asset_class:r.asset_class,netShares:0};
-  if(r.type==="BUY"||r.type==="SELL")instruments[r.symbol].netShares+=n(r.shares);
- }
-}
-
-function apiSettings(){
- const s=saveSettings(); if(!s.apiKey)throw new Error("Bitte zuerst den Twelve-Data-API-Key eintragen.");return s;
-}
 async function td(endpoint,params={}){
- const s=apiSettings(), u=new URL("https://api.twelvedata.com/"+endpoint);
- Object.entries(params).forEach(([k,v])=>{if(v!==""&&v!==null&&v!==undefined)u.searchParams.set(k,v)});
- u.searchParams.set("apikey",s.apiKey);
- const res=await fetch(u); const d=await res.json();
- if(!res.ok||d.status==="error"||d.code)throw new Error(d.message||("API-Fehler "+res.status));
+ const key=apiKey();if(!key)throw new Error("Kein API-Key eingetragen.");
+ const u=new URL("https://api.twelvedata.com/"+endpoint);
+ Object.entries(params).forEach(([k,v])=>{if(v!==undefined&&v!==null&&v!=="")u.searchParams.set(k,v)});
+ u.searchParams.set("apikey",key);
+ apiCalls++;log("Call "+apiCalls+": "+endpoint+" "+JSON.stringify(params));
+ const res=await fetch(u,{cache:"no-store"});
+ const left=res.headers.get("api-credits-left"),used=res.headers.get("api-credits-used");
+ if(left||used)log("Credits used="+(used??"?")+", left="+(left??"?"));
+ const d=await res.json();
+ if(!res.ok||d.status==="error"||d.code){const m=d.message||("HTTP "+res.status);log("FEHLER: "+m);throw new Error(m)}
  return d;
 }
-
-function looksLikeApiKey(value){
- const v=String(value||"").trim();
- const api=$("apiKey").value.trim();
- return !v || v===api || /^[a-f0-9]{28,40}$/i.test(v);
+function score(inst,c){let s=0;if(inst.asset_class==="FUND"&&c.instrument_type==="ETF")s+=40;if(inst.asset_class==="STOCK"&&c.instrument_type==="Common Stock")s+=40;if(c.currency==="EUR")s+=25;if(/xetr/i.test(c.exchange||""))s+=15;const a=inst.name.toLowerCase(),b=String(c.instrument_name||"").toLowerCase();if(b&&(a.includes(b)||b.includes(a)))s+=30;return s}
+async function resolve(inst){
+ const d=await td("symbol_search",{symbol:inst.name,outputsize:20});
+ const arr=Array.isArray(d.data)?d.data:[];
+ if(!arr.length)throw new Error("Keine Treffer für "+inst.name);
+ arr.sort((a,b)=>score(inst,b)-score(inst,a));
+ const best=arr[0];log("Zuordnung "+inst.name+" -> "+best.symbol+" @ "+(best.exchange||"-"));return best;
 }
-
-function validTicker(value){
- const v=String(value||"").trim();
- return !!v && !looksLikeApiKey(v) && /^[A-Za-z0-9._:\-\/]{1,30}$/.test(v);
+async function quoteEUR(c){
+ const q=await td("quote",{symbol:c.symbol,exchange:c.exchange||undefined});
+ let price=n(q.close||q.price),currency=q.currency||c.currency||"";
+ if(!price)throw new Error("Kein Kurs für "+c.symbol);
+ if(currency&&currency!=="EUR"){await sleep(700);const fx=await td("price",{symbol:currency+"/EUR"});price*=n(fx.price)}
+ return price;
 }
-
-function normalizeName(s){
- return String(s||"")
-   .toLowerCase()
-   .replace(/\([^)]*\)/g," ")
-   .replace(/[^a-z0-9äöüß]+/g," ")
-   .replace(/\b(inc|corp|corporation|plc|ag|se|sa|nv|ltd|limited|holdings?|class|registered|shares?|ordinary|common)\b/g," ")
-   .replace(/\s+/g," ")
-   .trim();
-}
-
-function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
-
-function candidateScore(inst,c){
- let score=0;
- const wantType=inst.asset_class==="FUND"?"ETF":"Common Stock";
- if(c.instrument_type===wantType) score+=45;
- if(c.currency==="EUR") score+=30;
-
- const ex=String(c.exchange||"").toUpperCase();
- if(["XETR","FWB","GETTEX","MUNICH","STUTTGART","BERLIN","DUSSELDORF","HAMBURG"].some(x=>ex.includes(x))) score+=15;
-
- const a=normalizeName(inst.name), b=normalizeName(c.instrument_name);
- if(a && b){
-   if(a===b) score+=60;
-   else if(a.includes(b)||b.includes(a)) score+=35;
-   const aw=new Set(a.split(" ").filter(x=>x.length>2));
-   const bw=new Set(b.split(" ").filter(x=>x.length>2));
-   let common=0; aw.forEach(x=>{ if(bw.has(x)) common++; });
-   score+=Math.min(common*10,40);
- }
-
- const sym=String(c.symbol||"").toUpperCase();
- const name=String(inst.name||"").toUpperCase();
- if(sym && name.startsWith(sym)) score+=8;
-
- return score;
-}
-
-async function tdSafe(endpoint,params={},retries=3){
- let lastErr=null;
- for(let attempt=0;attempt<retries;attempt++){
-   try{
-     return await td(endpoint,params);
-   }catch(e){
-     lastErr=e;
-     const msg=String(e.message||e);
-     const rateLimited=/rate|limit|credits|429/i.test(msg);
-     if(rateLimited && attempt<retries-1){
-       $("priceStatus").textContent="API-Limit erreicht – kurzer Moment, dann geht es automatisch weiter …";
-       await sleep(9000);
-       continue;
-     }
-     throw e;
-   }
- }
- throw lastErr||new Error("Unbekannter API-Fehler");
-}
-
-async function searchCandidates(inst){
- const queries=[inst.name];
-
- // Zusätzliche vereinfachte Namensvariante, falls der volle Name nicht trifft.
- const simple=normalizeName(inst.name);
- if(simple && simple!==normalizeName(queries[0])) queries.push(simple);
-
- let all=[];
- let errors=[];
-
- for(const q of queries){
-   if(!q) continue;
-   try{
-     const d=await tdSafe("symbol_search",{symbol:q,outputsize:30},3);
-     const arr=Array.isArray(d.data)?d.data:[];
-     all.push(...arr);
-     if(arr.length) break;
-   }catch(e){
-     errors.push(String(e.message||e));
-   }
-   await sleep(1200);
- }
-
- all=all.filter(c=>c && validTicker(c.symbol));
-
- const seen=new Set();
- all=all.filter(c=>{
-   const key=[c.symbol,c.exchange,c.currency].join("|");
-   if(seen.has(key)) return false;
-   seen.add(key); return true;
- });
-
- all.sort((a,b)=>candidateScore(inst,b)-candidateScore(inst,a));
-
- if(!all.length && errors.length){
-   throw new Error(errors[errors.length-1]);
- }
- return all;
-}
-
-async function autoResolve(){
- const open=Object.values(instruments).filter(x=>Math.abs(x.netShares)>1e-8);
- if(!open.length){
-   $("mappingList").innerHTML='<div class="note">Keine offenen Aktien-/ETF-Positionen vorhanden.</div>';
-   return;
- }
-
- $("priceStatus").textContent="Wertpapiere werden automatisch zugeordnet …";
- let failures=[];
-
- for(let i=0;i<open.length;i++){
-   const inst=open[i];
-
-   if(mapping[inst.isin]?.skip){
-     continue;
-   }
-
-   // Bereits früher gefundene, gültige Ticker niemals erneut suchen.
-   if(mapping[inst.isin] && validTicker(mapping[inst.isin].symbol)){
-     continue;
-   }
-
-   if(mapping[inst.isin] && !validTicker(mapping[inst.isin].symbol)){
-     delete mapping[inst.isin];
-   }
-
-   if(!mapping[inst.isin]){
-     $("priceStatus").textContent=`Zuordnung ${i+1}/${open.length}: ${inst.name}`;
-     try{
-       const candidates=await searchCandidates(inst);
-       const best=candidates[0];
-       if(best){
-         mapping[inst.isin]={
-           symbol:best.symbol,
-           exchange:best.exchange||"",
-           currency:best.currency||"",
-           resolvedName:best.instrument_name||"",
-           auto:true,
-           score:candidateScore(inst,best)
-         };
-         localStorage.setItem(MKEY,JSON.stringify(mapping));
-       }else{
-         failures.push(inst.name);
-       }
-     }catch(e){
-       failures.push(inst.name+" ("+String(e.message||e)+")");
-     }
-     await sleep(1200);
-   }
- }
-
- localStorage.setItem(MKEY,JSON.stringify(mapping));
- renderMapping();
-
- const unresolved=open.filter(x=>!mapping[x.isin]?.skip && (!mapping[x.isin]||!validTicker(mapping[x.isin].symbol)));
- const skippedCount=open.filter(x=>mapping[x.isin]?.skip).length;
- const foundCount=open.length-unresolved.length-skippedCount;
-
- if(unresolved.length){
-   const names=unresolved.slice(0,5).map(x=>x.name).join(", ");
-   $("priceStatus").innerHTML=
-     `<span class="warn">${foundCount} gefunden, ${skippedCount} übersprungen.</span> `+
-     `${unresolved.length} offen: ${esc(names)}${unresolved.length>5?" …":""}`;
- }else{
-   $("priceStatus").innerHTML=
-     `<span class="good">${foundCount} gefunden, ${skippedCount} übersprungen.</span> Du kannst direkt „Kurse laden & auswerten“ drücken.`;
- }
-}
-
-function renderMapping(){
- const open=Object.values(instruments).filter(x=>Math.abs(x.netShares)>1e-8);
- $("mappingList").innerHTML=open.map(inst=>{
-  let m=mapping[inst.isin]||{};
-  if(!validTicker(m.symbol)) m={};
-  return `<div class="mapitem">
-   <div class="name">${esc(inst.name)}</div>
-   <div class="meta">${esc(inst.isin)} · ${inst.asset_class==="FUND"?"ETF":"Aktie"} · Bestand ${inst.netShares.toLocaleString("de-DE",{maximumFractionDigits:6})}</div>
-   <div class="mapgrid">
-    <div><label>API-Ticker</label><input data-map="${esc(inst.isin)}" data-key="symbol" value="${esc(m.symbol||"")}" ${m.skip?"disabled":""}></div>
-    <div><label>Börse (optional)</label><input data-map="${esc(inst.isin)}" data-key="exchange" value="${esc(m.exchange||"")}" ${m.skip?"disabled":""}></div>
-   </div>
-   <div class="meta">${m.skip
-      ? "Dieses Wertpapier wird bei der Auswertung übersprungen."
-      : (m.resolvedName
-          ? `Gefunden: ${esc(m.resolvedName)} · ${esc(m.currency||"")}`
-          : "Keine Zuordnung gefunden – wird bei der Auswertung automatisch ausgelassen.")}</div>
-   <div class="actions">
-    <button class="${m.skip?"secondary":"danger"} smallbtn" data-skip="${esc(inst.isin)}">
-      ${m.skip?"Wieder einbeziehen":"Überspringen"}
-    </button>
-   </div>
-  </div>`
- }).join("");
- document.querySelectorAll("[data-map]").forEach(inp=>inp.onchange=()=>{
-  let id=inp.dataset.map; mapping[id]=mapping[id]||{};
-  const val=inp.value.trim();
-  if(inp.dataset.key==="symbol" && looksLikeApiKey(val)){
-    inp.value="";
-    delete mapping[id].symbol;
-    alert("Das ist kein gültiger Börsenticker. Der Twelve-Data-API-Key gehört nur in das Feld oben unter Kursdaten.");
-  }else{
-    mapping[id][inp.dataset.key]=val;
-  }
-  localStorage.setItem(MKEY,JSON.stringify(mapping));
- });
-
- document.querySelectorAll("[data-skip]").forEach(btn=>btn.onclick=()=>{
-   const id=btn.dataset.skip;
-   mapping[id]=mapping[id]||{};
-   mapping[id].skip=!mapping[id].skip;
-   localStorage.setItem(MKEY,JSON.stringify(mapping));
-   renderMapping();
- });
-}
-
-async function quoteEUR(inst){
- const m=mapping[inst.isin];
- if(!m||!validTicker(m.symbol))throw new Error("Kein gültiger API-Ticker für "+inst.name+". Bitte die Zuordnung prüfen.");
- let q=await tdSafe("quote",{symbol:m.symbol,exchange:m.exchange||undefined},3);
- let p=n(q.close||q.price), currency=q.currency||m.currency||"";
- if(!p)throw new Error("Kein Kurs für "+inst.name);
- if(currency && currency!=="EUR"){
-  let fx=await tdSafe("price",{symbol:currency+"/EUR"},3);
-  p*=n(fx.price);
- }
- return p;
-}
-
-async function getBenchmarkSeries(){
- const s=apiSettings();
- const stockRows=rows.filter(r=>r.asset_class==="STOCK"&&["BUY","SELL"].includes(r.type));
- if(!stockRows.length)return;
- let earliest=stockRows[0].date;
- let d=await tdSafe("time_series",{symbol:s.benchSymbol,exchange:s.benchExchange,interval:"1day",start_date:earliest,outputsize:5000},3);
- benchmarkSeries=(d.values||[]).map(x=>({date:x.datetime.slice(0,10),close:n(x.close)})).sort((a,b)=>a.date.localeCompare(b.date));
- let q=await tdSafe("quote",{symbol:s.benchSymbol,exchange:s.benchExchange},3);
- benchmarkCurrent=n(q.close||q.price);
- let currency=q.currency||"EUR";
- if(currency!=="EUR"){
-  let fx=await tdSafe("price",{symbol:currency+"/EUR"},3); let rate=n(fx.price);
-  benchmarkSeries=benchmarkSeries.map(x=>({...x,close:x.close*rate})); benchmarkCurrent*=rate;
- }
-}
-function benchPrice(date){
- let best=null;
- for(const x of benchmarkSeries){if(x.date<=date)best=x;else break}
- return best?best.close:null;
-}
-
-$("loadPrices").onclick=async()=>{
+$("runTest").onclick=async()=>{
+ $("runTest").disabled=true;$("runStatus").textContent="Test läuft …";$("resultsCard").classList.add("hidden");$("log").textContent="";apiCalls=0;
  try{
-  saveSettings();
-  $("loadPrices").disabled=true;$("priceStatus").textContent="Aktuelle Kurse und Benchmark-Historie werden geladen …";
-  currentPrices={};
-  const open=Object.values(instruments).filter(x=>Math.abs(x.netShares)>1e-8);
-
-  const active=open.filter(x =>
-    !mapping[x.isin]?.skip &&
-    mapping[x.isin] &&
-    validTicker(mapping[x.isin].symbol)
-  );
-
-  const autoExcluded=open.filter(x =>
-    !mapping[x.isin]?.skip &&
-    (!mapping[x.isin] || !validTicker(mapping[x.isin].symbol))
-  );
-
-  for(let i=0;i<active.length;i++){
-   $("priceStatus").textContent=`Kurse laden: ${i+1}/${active.length} · ${active[i].name}`;
-   currentPrices[active[i].isin]=await quoteEUR(active[i]);
-  }
-
-  if(autoExcluded.length){
-   $("priceStatus").textContent=
-     `${active.length} Positionen werden ausgewertet, ${autoExcluded.length} ohne Kurszuordnung werden ausgelassen …`;
-  }
-  $("priceStatus").textContent="World-ETF-Historie wird geladen …";
-  await getBenchmarkSeries();
-  calculate();
-  const excludedCount=Object.values(instruments).filter(x =>
-    Math.abs(x.netShares)>1e-8 &&
-    (mapping[x.isin]?.skip || !mapping[x.isin] || !validTicker(mapping[x.isin].symbol))
-  ).length;
-  $("priceStatus").innerHTML=
-    '<span class="good">Auswertung aktualisiert.</span>'+
-    (excludedCount?` ${excludedCount} Position(en) wurden ausgelassen.`:"");
- }catch(err){$("priceStatus").innerHTML=`<span class="bad">${esc(err.message)}</span>`}
- finally{$("loadPrices").disabled=false}
-};
-
-function cashBuy(r){return Math.max(0,-(n(r.amount)+n(r.fee)+n(r.tax)))}
-function cashSell(r){return Math.max(0,n(r.amount)+n(r.fee)+n(r.tax))}
-function dividendNet(r){return n(r.amount)+n(r.tax)+n(r.fee)}
-
-function calculateStocks(){
- let buyTotal=0,sellTotal=0,divTotal=0;
- let states={}; // per ISIN actual shares + benchmark units
- for(const r of rows.filter(x=>x.asset_class==="STOCK")){
-  let id=r.symbol;if(!id)continue;
-  if(mapping[id]?.skip || !mapping[id] || !validTicker(mapping[id].symbol)) continue;
-  states[id]=states[id]||{shares:0,benchUnits:0,benchRealized:0};
-  let st=states[id];
-  if(r.type==="BUY"){
-   let cost=cashBuy(r), bp=benchPrice(r.date);
-   buyTotal+=cost;st.shares+=Math.abs(n(r.shares));
-   if(bp)st.benchUnits+=cost/bp;
-  } else if(r.type==="SELL"){
-   let pre=st.shares, sold=Math.abs(n(r.shares)), frac=pre>0?Math.min(1,sold/pre):0, bp=benchPrice(r.date);
-   sellTotal+=cashSell(r);
-   if(bp&&frac>0){st.benchRealized+=st.benchUnits*frac*bp;st.benchUnits*=1-frac}
-   st.shares=Math.max(0,pre-sold);
-  } else if(r.type==="DIVIDEND"){divTotal+=dividendNet(r)}
- }
- let curVal=0, benchCur=0, benchRealized=0;
- Object.entries(states).forEach(([id,st])=>{
-  curVal+=st.shares*(currentPrices[id]||0);
-  benchCur+=st.benchUnits*(benchmarkCurrent||0);benchRealized+=st.benchRealized;
- });
- let totalOut=sellTotal+divTotal+curVal, pl=totalOut-buyTotal, perf=buyTotal?pl/buyTotal*100:0;
- let benchPL=benchRealized+benchCur-buyTotal, bperf=buyTotal?benchPL/buyTotal*100:0;
- return {buyTotal,sellTotal,divTotal,curVal,pl,perf,bperf,alpha:perf-bperf};
-}
-
-function calculateFund(id){
- let inst=instruments[id], shares=0,buy=0,sells=0, dividends=0;
- for(const r of rows.filter(x=>x.asset_class==="FUND"&&x.symbol===id)){
-  if(r.type==="BUY"){shares+=Math.abs(n(r.shares));buy+=cashBuy(r)}
-  else if(r.type==="SELL"){shares-=Math.abs(n(r.shares));sells+=cashSell(r)}
-  else if(r.type==="DIVIDEND"){dividends+=dividendNet(r)}
- }
- shares=Math.max(0,shares);
- let cur=shares*(currentPrices[id]||0), pl=sells+dividends+cur-buy, perf=buy?pl/buy*100:0;
- return {shares,buy,sells,dividends,cur,pl,perf};
-}
-
-function calculate(){
- const s=calculateStocks();
- $("stockBuys").textContent=money(s.buyTotal);$("stockValue").textContent=money(s.curVal);
- $("stockPerf").textContent=pct(s.perf);color($("stockPerf"),s.perf);
- $("benchPerf").textContent=pct(s.bperf);color($("benchPerf"),s.bperf);
- $("alpha").textContent=(s.alpha>=0?"+":"")+pct(s.alpha)+"-Pkt.";color($("alpha"),s.alpha);
- $("stockSells").textContent=money(s.sellTotal);$("stockDivs").textContent=money(s.divTotal);
- $("stockPL").textContent=money(s.pl);color($("stockPL"),s.pl);
- $("stockCard").classList.remove("hidden");
-
- const funds=Object.values(instruments).filter(x =>
-   x.asset_class==="FUND" &&
-   !mapping[x.isin]?.skip &&
-   mapping[x.isin] &&
-   validTicker(mapping[x.isin].symbol)
- );
- $("etfList").innerHTML=funds.map(inst=>{
-  let x=calculateFund(inst.isin);
-  return `<div class="section">
-   <div class="rowhead"><div><div class="name">${esc(inst.name)}</div><div class="meta">${esc(inst.isin)} · aktueller Bestand ${x.shares.toLocaleString("de-DE",{maximumFractionDigits:6})}</div></div>
-   <div class="v ${x.perf>=0?"good":"bad"}">${pct(x.perf)}</div></div>
-   <div class="three">
-    <div class="box"><div class="k">Käufe</div><div class="v">${money(x.buy)}</div></div>
-    <div class="box"><div class="k">Aktueller Wert</div><div class="v">${money(x.cur)}</div></div>
-    <div class="box"><div class="k">Gewinn / Verlust</div><div class="v ${x.pl>=0?"good":"bad"}">${money(x.pl)}</div></div>
-   </div>
-   ${x.sells?`<div class="meta" style="margin-top:8px">Realisierte Verkaufserlöse: ${money(x.sells)}</div>`:""}
-  </div>`
- }).join("");
- $("etfCard").classList.remove("hidden");
-
- const counts={};
- rows.forEach(r=>{if(r.asset_class&&!["STOCK","FUND"].includes(r.asset_class))counts[r.asset_class]=(counts[r.asset_class]||0)+1});
- const skipped=Object.values(instruments).filter(x=>mapping[x.isin]?.skip);
- const unresolved=Object.values(instruments).filter(x =>
-   !mapping[x.isin]?.skip &&
-   (!mapping[x.isin] || !validTicker(mapping[x.isin].symbol))
- );
- const parts=[];
- if(Object.keys(counts).length){
-   parts.push(Object.entries(counts).map(([k,v])=>`${k}: ${v} Transaktionen`).join(" · "));
- }
- if(skipped.length){
-   parts.push("Manuell übersprungen: "+skipped.map(x=>x.name).join(", "));
- }
- if(unresolved.length){
-   parts.push("Ohne Kurszuordnung automatisch ausgelassen: "+unresolved.map(x=>x.name).join(", "));
- }
- if(parts.length){
-  $("otherText").textContent=parts.join(" · ")+" — nicht in die Performance-Auswertung einbezogen.";
-  $("otherCard").classList.remove("hidden");
- }else{
-  $("otherCard").classList.add("hidden");
- }
-}
-
-function renderTransactions(){
- let rel=rows.filter(r=>["STOCK","FUND"].includes(r.asset_class)&&["BUY","SELL","DIVIDEND"].includes(r.type));
- $("txTable").innerHTML="<tr><th>Datum</th><th>Name</th><th>Typ</th><th>Betrag</th></tr>"+
- rel.slice().reverse().map(r=>`<tr><td>${esc(r.date)}</td><td>${esc(r.name)}</td><td>${esc(r.type)}</td><td>${money(n(r.amount)+n(r.fee)+n(r.tax))}</td></tr>`).join("");
-}
-loadSettings();
-</script>
-<script>
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./service-worker.js");
-  });
+  const sn=await resolve(serviceNow);await sleep(800);
+  const etf=await resolve(selectedETF);await sleep(800);
+  const snp=await quoteEUR(sn);await sleep(800);
+  const etfp=await quoteEUR(etf);
+  $("results").innerHTML=
+   '<div class="result"><div class="name">'+esc(serviceNow.name)+'</div><div class="grid"><div class="box"><div class="k">Ticker</div><div class="v">'+esc(sn.symbol)+'</div></div><div class="box"><div class="k">Börse</div><div class="v">'+esc(sn.exchange||"–")+'</div></div><div class="box"><div class="k">Kurs</div><div class="v">'+money(snp)+'</div></div></div></div>'+
+   '<div class="result"><div class="name">'+esc(selectedETF.name)+'</div><div class="grid"><div class="box"><div class="k">Ticker</div><div class="v">'+esc(etf.symbol)+'</div></div><div class="box"><div class="k">Börse</div><div class="v">'+esc(etf.exchange||"–")+'</div></div><div class="box"><div class="k">Kurs</div><div class="v">'+money(etfp)+'</div></div></div></div>';
+  $("resultsCard").classList.remove("hidden");$("runStatus").innerHTML='<span class="good">Test erfolgreich. '+apiCalls+' API-Aufrufe.</span>';
+ }catch(err){$("runStatus").innerHTML='<span class="bad">'+esc(err.message)+'</span>'}
+ finally{$("runTest").disabled=false}
 }
 </script>
+<script>if("serviceWorker"in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js"))}</script>
 </body>
 </html>
