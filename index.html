@@ -4,10 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="TR API Test">
+<meta name="apple-mobile-web-app-title" content="NOW vs SPY">
 <link rel="manifest" href="./manifest.json">
 <meta name="theme-color" content="#0f172a">
-<title>ServiceNow vs. SPY</title>
+<title>ServiceNow NOW vs. SPY</title>
 <style>
 :root{--bg:#f1f5f9;--card:#fff;--txt:#0f172a;--muted:#64748b;--line:#e2e8f0;--accent:#2563eb;--good:#15803d;--bad:#b91c1c;--soft:#f8fafc}
 *{box-sizing:border-box}
@@ -26,14 +26,14 @@ button{border:0;padding:12px 14px;font-weight:700;cursor:pointer}
 .result{border-top:1px solid var(--line);padding:14px 0}.result:first-child{border-top:0}
 .name{font-size:18px;font-weight:750}.grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}
 .box{background:var(--soft);border-radius:11px;padding:11px}.k{font-size:11px;color:var(--muted)}.v{font-size:17px;font-weight:750;margin-top:3px}
-.log{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;white-space:pre-wrap;background:#0f172a;color:#e2e8f0;border-radius:11px;padding:12px;max-height:300px;overflow:auto}
+.log{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;white-space:pre-wrap;background:#0f172a;color:#e2e8f0;border-radius:11px;padding:12px;max-height:320px;overflow:auto}
 @media(max-width:560px){.grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <div class="wrap">
 <h1>ServiceNow vs. S&P 500</h1>
-<div class="sub">Technischer Test mit einem festen Benchmark: SPDR S&P 500 ETF Trust (SPY). Keine ETF-Suche mehr nötig.</div>
+<div class="sub">Test über die US-Originalnotierungen: ServiceNow = NOW, Benchmark = SPY.</div>
 
 <div class="card">
 <h2>1 · API-Key</h2>
@@ -53,7 +53,7 @@ button{border:0;padding:12px 14px;font-weight:700;cursor:pointer}
 <div class="card hidden" id="testCard">
 <h2>3 · Test</h2>
 <div id="selectionText" class="note"></div>
-<button class="primary" id="runTest" style="margin-top:12px">ServiceNow + SPY testen</button>
+<button class="primary" id="runTest" style="margin-top:12px">NOW + SPY testen</button>
 <div id="runStatus" class="status"></div>
 </div>
 
@@ -64,19 +64,19 @@ button{border:0;padding:12px 14px;font-weight:700;cursor:pointer}
 
 <div class="card">
 <h2>API-Protokoll</h2>
-<div class="note" style="margin-bottom:8px">Aktuelle und historische Kursabfragen werden einzeln protokolliert.</div>
+<div class="note" style="margin-bottom:8px">Keine XETR-Suche mehr: die US-Ticker werden direkt verwendet.</div>
 <div id="log" class="log">Noch keine API-Anfrage.</div>
 </div>
 </div>
 
 <script>
+const STOCK={symbol:"NOW",exchange:"NYSE",name:"ServiceNow"};
 const BENCH={symbol:"SPY",exchange:"NYSE",name:"SPDR S&P 500 ETF Trust"};
 let rows=[],serviceNow=null,apiCalls=0;
 
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 const n=v=>{let x=parseFloat(String(v??"").replace(",","."));return Number.isFinite(x)?x:0};
-const money=x=>Number(x||0).toLocaleString("de-DE",{style:"currency",currency:"EUR"});
 const pct=x=>Number(x||0).toLocaleString("de-DE",{minimumFractionDigits:2,maximumFractionDigits:2})+" %";
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 
@@ -137,8 +137,9 @@ $("csvFile").addEventListener("change",async e=>{
    if(!serviceNow)throw new Error("ServiceNow wurde nicht als offene Aktienposition gefunden.");
 
    $("selectionText").innerHTML=
-     "<b>Aktie:</b> "+esc(serviceNow.name)+" · "+esc(serviceNow.isin)+"<br>"+
-     "<b>Benchmark:</b> "+BENCH.name+" ("+BENCH.symbol+")";
+     "<b>Aktie aus CSV:</b> "+esc(serviceNow.name)+" · "+esc(serviceNow.isin)+"<br>"+
+     "<b>Verwendeter US-Ticker:</b> NOW @ NYSE<br>"+
+     "<b>Benchmark:</b> SPY @ NYSE";
    $("testCard").classList.remove("hidden");
    $("fileStatus").innerHTML='<span class="good">CSV geladen. ServiceNow gefunden.</span>';
  }catch(err){
@@ -170,46 +171,26 @@ async function td(endpoint,params={}){
  return d;
 }
 
-function score(inst,c){
- let s=0;
- if(c.instrument_type==="Common Stock")s+=40;
- if(c.currency==="EUR")s+=25;
- if(/xetr/i.test(c.exchange||""))s+=15;
- const a=String(inst.name||"").toLowerCase();
- const b=String(c.instrument_name||"").toLowerCase();
- if(b&&(a.includes(b)||b.includes(a)))s+=30;
- return s;
-}
-
-async function resolveServiceNow(){
- const d=await td("symbol_search",{symbol:serviceNow.name,outputsize:20});
- const arr=Array.isArray(d.data)?d.data:[];
- if(!arr.length)throw new Error("Keine Treffer für ServiceNow.");
- arr.sort((a,b)=>score(serviceNow,b)-score(serviceNow,a));
- const best=arr[0];
- log("Zuordnung ServiceNow -> "+best.symbol+" @ "+(best.exchange||"-")+" ("+(best.currency||"-")+")");
- return best;
-}
-
-async function quote(symbol,exchange){
- const q=await td("quote",{symbol,exchange});
+async function quote(asset){
+ const q=await td("quote",{symbol:asset.symbol,exchange:asset.exchange});
  const p=n(q.close||q.price);
- if(!p)throw new Error("Kein aktueller Kurs für "+symbol);
+ if(!p)throw new Error("Kein aktueller Kurs für "+asset.symbol);
  return {price:p,currency:q.currency||""};
 }
 
-async function historical(symbol,exchange,startDate){
+async function historical(asset,startDate){
  const d=await td("time_series",{
-   symbol,
-   exchange,
+   symbol:asset.symbol,
+   exchange:asset.exchange,
    interval:"1day",
    start_date:startDate,
    outputsize:10
  });
  const vals=Array.isArray(d.values)?d.values:[];
- if(!vals.length)throw new Error("Keine historischen Kurse für "+symbol);
- const oldest=vals.slice().sort((a,b)=>a.datetime.localeCompare(b.datetime))[0];
- return {date:oldest.datetime.slice(0,10),price:n(oldest.close)};
+ if(!vals.length)throw new Error("Keine historischen Kurse für "+asset.symbol);
+ const sorted=vals.slice().sort((a,b)=>a.datetime.localeCompare(b.datetime));
+ const first=sorted[0];
+ return {date:first.datetime.slice(0,10),price:n(first.close)};
 }
 
 function firstServiceNowBuyDate(){
@@ -232,51 +213,47 @@ $("runTest").onclick=async()=>{
    const buyDate=firstServiceNowBuyDate();
    if(!buyDate)throw new Error("Kein ServiceNow-Kaufdatum gefunden.");
 
-   // 1: ServiceNow auflösen
-   const sn=await resolveServiceNow();
+   // 1: aktueller NOW-Kurs
+   const nowQuote=await quote(STOCK);
    await sleep(900);
 
-   // 2: aktueller ServiceNow-Kurs
-   const snNow=await quote(sn.symbol,sn.exchange||"XETR");
+   // 2: aktueller SPY-Kurs
+   const spyQuote=await quote(BENCH);
    await sleep(900);
 
-   // 3: aktueller SPY-Kurs
-   const spyNow=await quote(BENCH.symbol,BENCH.exchange);
+   // 3: historischer NOW-Kurs ab Kaufdatum
+   const nowHist=await historical(STOCK,buyDate);
    await sleep(900);
 
-   // 4: historische ServiceNow-Daten ab erstem Kauf
-   const snHist=await historical(sn.symbol,sn.exchange||"XETR",buyDate);
-   await sleep(900);
+   // 4: historischer SPY-Kurs ab Kaufdatum
+   const spyHist=await historical(BENCH,buyDate);
 
-   // 5: historische SPY-Daten ab erstem Kauf
-   const spyHist=await historical(BENCH.symbol,BENCH.exchange,buyDate);
-
-   const snPerf=(snNow.price/snHist.price-1)*100;
-   const spyPerf=(spyNow.price/spyHist.price-1)*100;
+   const nowPerf=(nowQuote.price/nowHist.price-1)*100;
+   const spyPerf=(spyQuote.price/spyHist.price-1)*100;
 
    $("results").innerHTML=`
     <div class="result">
-      <div class="name">${esc(serviceNow.name)}</div>
-      <div class="meta">${esc(serviceNow.isin)} · gefunden als ${esc(sn.symbol)} @ ${esc(sn.exchange||"–")}</div>
+      <div class="name">ServiceNow (NOW)</div>
+      <div class="meta">NYSE · CSV-ISIN ${esc(serviceNow.isin)}</div>
       <div class="grid">
-       <div class="box"><div class="k">Historischer Kurs</div><div class="v">${snHist.price.toFixed(2)}</div><div class="meta">${snHist.date}</div></div>
-       <div class="box"><div class="k">Aktueller Kurs</div><div class="v">${snNow.price.toFixed(2)}</div></div>
-       <div class="box"><div class="k">Performance</div><div class="v">${pct(snPerf)}</div></div>
+       <div class="box"><div class="k">Historischer Kurs</div><div class="v">${nowHist.price.toFixed(2)}</div><div class="meta">${nowHist.date}</div></div>
+       <div class="box"><div class="k">Aktueller Kurs</div><div class="v">${nowQuote.price.toFixed(2)}</div></div>
+       <div class="box"><div class="k">Performance</div><div class="v">${pct(nowPerf)}</div></div>
       </div>
     </div>
     <div class="result">
       <div class="name">${BENCH.name}</div>
-      <div class="meta">${BENCH.symbol} @ ${BENCH.exchange}</div>
+      <div class="meta">SPY @ NYSE</div>
       <div class="grid">
        <div class="box"><div class="k">Historischer Kurs</div><div class="v">${spyHist.price.toFixed(2)}</div><div class="meta">${spyHist.date}</div></div>
-       <div class="box"><div class="k">Aktueller Kurs</div><div class="v">${spyNow.price.toFixed(2)}</div></div>
+       <div class="box"><div class="k">Aktueller Kurs</div><div class="v">${spyQuote.price.toFixed(2)}</div></div>
        <div class="box"><div class="k">Performance</div><div class="v">${pct(spyPerf)}</div></div>
       </div>
     </div>
     <div class="result">
       <div class="name">Differenz</div>
       <div class="grid">
-       <div class="box"><div class="k">ServiceNow minus SPY</div><div class="v">${pct(snPerf-spyPerf)}-Pkt.</div></div>
+       <div class="box"><div class="k">NOW minus SPY</div><div class="v">${pct(nowPerf-spyPerf)}-Pkt.</div></div>
        <div class="box"><div class="k">API-Aufrufe</div><div class="v">${apiCalls}</div></div>
       </div>
     </div>`;
