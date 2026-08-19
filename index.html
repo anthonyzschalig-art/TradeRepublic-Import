@@ -79,11 +79,12 @@ button:disabled{opacity:.55}
  <div class="box"><div class="k">Käufe inkl. Gebühren</div><div class="v" id="totalBuys">–</div></div>
  <div class="box"><div class="k">Aktueller Wert + Rückflüsse</div><div class="v" id="totalValue">–</div></div>
 </div>
+<div class="note" id="benchmarkPeriod" style="margin-top:10px"></div>
 </div>
 
 <div class="card hidden" id="chartCard">
 <h2>Performanceverlauf</h2>
-<div class="note">Cashflow-bereinigt: Käufe fließen am tatsächlichen Kaufdatum auch in die virtuelle MSCI-World-Benchmark. Verkäufe reduzieren die zugehörige Benchmarkposition proportional.</div>
+<div class="note">Die blaue Portfolio-Linie ist cashflow-bereinigt. Die graue MSCI-World-Linie zeigt dagegen die reine Kursperformance des Benchmarks seit dem gewählten Startdatum, täglich in EUR umgerechnet.</div>
 <div class="chartWrap" id="chartWrap"></div>
 <div class="legend">
  <span><i class="dot" style="background:#2563eb"></i>Einzelaktien-Portfolio</span>
@@ -387,12 +388,17 @@ function allDates(startDate){
 
 function buildCurves(startDate){
  const dates=allDates(startDate);
- const states={};
- Object.keys(included).forEach(isin=>states[isin]={shares:0,benchUnits:0});
- let cumBuys=0,cumSells=0,cumDivs=0,benchRealized=0;
- const port=[],bench=[];
- const txByDate={};
 
+ // -------------------------
+ // Portfolio: cashflow-bereinigt
+ // -------------------------
+ const states={};
+ Object.keys(included).forEach(isin=>states[isin]={shares:0});
+
+ let cumBuys=0,cumSells=0,cumDivs=0;
+ const port=[];
+
+ const txByDate={};
  for(const [isin,obj] of Object.entries(included)){
   for(const r of obj.def.rows.filter(r=>r.date>=startDate)){
    (txByDate[r.date]??=[]).push(r);
@@ -400,39 +406,63 @@ function buildCurves(startDate){
  }
 
  for(const date of dates){
-  const benchEUR=valueAt(histories.__BENCH,date);
   const fx=valueAt(fxHistory,date);
-  if(!benchEUR||!fx)continue;
+  if(!fx)continue;
 
   for(const r of (txByDate[date]||[])){
    const st=states[r.symbol];
    if(!st)continue;
+
    if(r.type==="BUY"){
-    const cost=transactionCashBuy(r);
     st.shares+=Math.abs(n(r.shares));
-    cumBuys+=cost;
-    st.benchUnits+=cost/benchEUR;
+    cumBuys+=transactionCashBuy(r);
    }else if(r.type==="SELL"){
-    const before=st.shares,sold=Math.abs(n(r.shares)),frac=before>0?Math.min(1,sold/before):0;
+    st.shares=Math.max(0,st.shares-Math.abs(n(r.shares)));
     cumSells+=transactionCashSell(r);
-    if(frac>0){benchRealized+=st.benchUnits*frac*benchEUR;st.benchUnits*=1-frac}
-    st.shares=Math.max(0,before-sold);
    }else if(r.type==="DIVIDEND"){
     cumDivs+=dividendNet(r);
    }
   }
 
   if(cumBuys<=0)continue;
-  let cur=0,benchValue=0;
+
+  let cur=0;
   for(const [isin,obj] of Object.entries(included)){
    const st=states[isin];
    const usd=valueAt(histories[isin],date);
    if(usd)cur+=st.shares*usd*fx;
-   benchValue+=st.benchUnits*benchEUR;
   }
-  port.push({date,value:(cur+cumSells+cumDivs-cumBuys)/cumBuys*100});
-  bench.push({date,value:(benchValue+benchRealized-cumBuys)/cumBuys*100});
+
+  port.push({
+   date,
+   value:(cur+cumSells+cumDivs-cumBuys)/cumBuys*100
+  });
  }
+
+ // -------------------------
+ // Benchmark: reine MSCI-World-Performance seit Startdatum
+ // URTH in USD -> täglich mit historischem USD/EUR umrechnen
+ // -------------------------
+ const bench=[];
+ let benchStartEUR=null;
+
+ for(const date of dates){
+  const urthUSD=valueAt(histories.__BENCH,date);
+  const fx=valueAt(fxHistory,date);
+  if(!urthUSD||!fx)continue;
+
+  const urthEUR=urthUSD*fx;
+
+  if(benchStartEUR===null){
+   benchStartEUR=urthEUR;
+  }
+
+  bench.push({
+   date,
+   value:(urthEUR/benchStartEUR-1)*100
+  });
+ }
+
  return {port,bench};
 }
 
@@ -483,6 +513,10 @@ function renderResults(startDate){
  $("benchPerf").textContent=pct(benchPerf);$("benchPerf").className="v "+(benchPerf>=0?"good":"bad");
  $("alpha").textContent=(alpha>=0?"+":"")+pct(alpha)+"-Pkt.";$("alpha").className="v "+(alpha>=0?"good":"bad");
  $("totalBuys").textContent=money(totalBuys);$("totalValue").textContent=money(totalOut);
+ if(curves.bench.length){
+  $("benchmarkPeriod").textContent=
+   "MSCI World: reine Kursperformance von "+curves.bench[0].date+" bis "+curves.bench[curves.bench.length-1].date+" in EUR.";
+ }
 
  $("assets").innerHTML=stats.sort((a,b)=>b.stat.currentValue-a.stat.currentValue).map(x=>`
   <div class="asset">
