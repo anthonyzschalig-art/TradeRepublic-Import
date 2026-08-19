@@ -4,10 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Aktien vs SPY">
+<meta name="apple-mobile-web-app-title" content="Aktien vs EUNL">
 <link rel="manifest" href="./manifest.json">
 <meta name="theme-color" content="#0f172a">
-<title>Alle Einzelaktien vs. SPY</title>
+<title>Alle Einzelaktien vs. MSCI World</title>
 <style>
 :root{--bg:#f1f5f9;--card:#fff;--txt:#0f172a;--muted:#64748b;--line:#e2e8f0;--accent:#2563eb;--good:#15803d;--bad:#b91c1c;--warn:#92400e;--soft:#f8fafc}
 *{box-sizing:border-box}
@@ -40,7 +40,7 @@ button:disabled{opacity:.55}
 </head>
 <body>
 <div class="wrap">
-<h1>Einzelaktien vs. S&P 500</h1>
+<h1>Einzelaktien vs. MSCI World</h1>
 <div class="sub">Alle Aktien aus dem Trade-Republic-CSV. ETFs/Fonds werden vollständig ausgeschlossen.</div>
 
 <div class="card">
@@ -72,7 +72,7 @@ button:disabled{opacity:.55}
 <h2>Gesamtperformance Einzelaktien</h2>
 <div class="three">
  <div class="box"><div class="k">Einzelaktien gesamt</div><div class="v" id="portPerf">–</div></div>
- <div class="box"><div class="k">SPY-Benchmark</div><div class="v" id="spyPerf">–</div></div>
+ <div class="box"><div class="k">MSCI-World-Benchmark</div><div class="v" id="benchPerf">–</div></div>
  <div class="box"><div class="k">Out-/Underperformance</div><div class="v" id="alpha">–</div></div>
 </div>
 <div class="grid">
@@ -83,11 +83,11 @@ button:disabled{opacity:.55}
 
 <div class="card hidden" id="chartCard">
 <h2>Performanceverlauf</h2>
-<div class="note">Cashflow-bereinigt: Käufe fließen am tatsächlichen Kaufdatum auch in die virtuelle SPY-Benchmark. Verkäufe reduzieren die zugehörige Benchmarkposition proportional.</div>
+<div class="note">Cashflow-bereinigt: Käufe fließen am tatsächlichen Kaufdatum auch in die virtuelle MSCI-World-Benchmark. Verkäufe reduzieren die zugehörige Benchmarkposition proportional.</div>
 <div class="chartWrap" id="chartWrap"></div>
 <div class="legend">
  <span><i class="dot" style="background:#2563eb"></i>Einzelaktien-Portfolio</span>
- <span><i class="dot" style="background:#64748b"></i>SPY-Benchmark</span>
+ <span><i class="dot" style="background:#64748b"></i>MSCI-World-Benchmark</span>
 </div>
 </div>
 
@@ -109,7 +109,7 @@ button:disabled{opacity:.55}
 </div>
 
 <script>
-const BENCH={symbol:"SPY",exchange:"NYSE",name:"SPDR S&P 500 ETF Trust"};
+const BENCH={symbol:"EUNL",exchange:"XDUS",name:"iShares Core MSCI World UCITS ETF (Acc)"};
 
 const DIRECT={
  "US0231351067":{symbol:"AMZN",exchange:"NASDAQ"},
@@ -222,7 +222,7 @@ $("csvFile").addEventListener("change",async e=>{
    "<b>CSV-Start:</b> "+esc(start)+"<br>"+
    "<b>Einzelaktien erkannt:</b> "+Object.keys(stockDefs).length+"<br>"+
    "<b>ETF/FUND-Transaktionen ausgeschlossen:</b> "+fundCount+"<br>"+
-   "<b>Benchmark:</b> SPY";
+   "<b>Benchmark:</b> EUNL (MSCI World)";
 
   $("calcCard").classList.remove("hidden");
   $("fileStatus").innerHTML='<span class="good">CSV geladen. ETFs werden ignoriert.</span>';
@@ -400,10 +400,9 @@ function buildCurves(startDate){
  }
 
  for(const date of dates){
-  const spyUSD=valueAt(histories.__SPY,date);
+  const benchEUR=valueAt(histories.__BENCH,date);
   const fx=valueAt(fxHistory,date);
-  if(!spyUSD||!fx)continue;
-  const spyEUR=spyUSD*fx;
+  if(!benchEUR||!fx)continue;
 
   for(const r of (txByDate[date]||[])){
    const st=states[r.symbol];
@@ -412,11 +411,11 @@ function buildCurves(startDate){
     const cost=transactionCashBuy(r);
     st.shares+=Math.abs(n(r.shares));
     cumBuys+=cost;
-    st.benchUnits+=cost/spyEUR;
+    st.benchUnits+=cost/benchEUR;
    }else if(r.type==="SELL"){
     const before=st.shares,sold=Math.abs(n(r.shares)),frac=before>0?Math.min(1,sold/before):0;
     cumSells+=transactionCashSell(r);
-    if(frac>0){benchRealized+=st.benchUnits*frac*spyEUR;st.benchUnits*=1-frac}
+    if(frac>0){benchRealized+=st.benchUnits*frac*benchEUR;st.benchUnits*=1-frac}
     st.shares=Math.max(0,before-sold);
    }else if(r.type==="DIVIDEND"){
     cumDivs+=dividendNet(r);
@@ -429,7 +428,7 @@ function buildCurves(startDate){
    const st=states[isin];
    const usd=valueAt(histories[isin],date);
    if(usd)cur+=st.shares*usd*fx;
-   benchValue+=st.benchUnits*spyEUR;
+   benchValue+=st.benchUnits*benchEUR;
   }
   port.push({date,value:(cur+cumSells+cumDivs-cumBuys)/cumBuys*100});
   bench.push({date,value:(benchValue+benchRealized-cumBuys)/cumBuys*100});
@@ -477,11 +476,11 @@ function renderResults(startDate){
  const totalOut=stats.reduce((s,x)=>s+x.stat.currentValue+x.stat.sells+x.stat.divs,0);
  const portPerf=totalBuys>0?(totalOut-totalBuys)/totalBuys*100:0;
  const curves=buildCurves(startDate);
- const spyPerf=curves.bench.length?curves.bench[curves.bench.length-1].value:0;
- const alpha=portPerf-spyPerf;
+ const benchPerf=curves.bench.length?curves.bench[curves.bench.length-1].value:0;
+ const alpha=portPerf-benchPerf;
 
  $("portPerf").textContent=pct(portPerf);$("portPerf").className="v "+(portPerf>=0?"good":"bad");
- $("spyPerf").textContent=pct(spyPerf);$("spyPerf").className="v "+(spyPerf>=0?"good":"bad");
+ $("benchPerf").textContent=pct(benchPerf);$("benchPerf").className="v "+(benchPerf>=0?"good":"bad");
  $("alpha").textContent=(alpha>=0?"+":"")+pct(alpha)+"-Pkt.";$("alpha").className="v "+(alpha>=0?"good":"bad");
  $("totalBuys").textContent=money(totalBuys);$("totalValue").textContent=money(totalOut);
 
@@ -519,8 +518,8 @@ $("runCalc").onclick=async()=>{
  const step=msg=>{done++;setProgress(done,totalSteps,msg)};
 
  try{
-  // 1) SPY + FX first
-  histories.__SPY=await loadHistory(BENCH,startDate);step("SPY-Historie geladen.");
+  // 1) EUNL + FX first
+  histories.__BENCH=await loadHistory(BENCH,startDate);step("MSCI-World-Historie geladen.");
   fxHistory=await loadFxHistory(startDate);step("USD/EUR-Historie geladen.");
 
   for(const def of defs){
