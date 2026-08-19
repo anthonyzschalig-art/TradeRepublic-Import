@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="TR Tracker">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<meta name="theme-color" content="#0f172a">
+<title>TR Portfolio Tracker</title>
+<style>
+:root{
+ --bg:#f1f5f9;--card:#fff;--txt:#0f172a;--muted:#64748b;--line:#e2e8f0;
+ --accent:#2563eb;--good:#15803d;--bad:#b91c1c;--soft:#f8fafc;--warn:#92400e
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.wrap{max-width:820px;margin:auto;padding:18px 13px 45px}
+h1{font-size:26px;margin:6px 0 4px}.subtitle{font-size:13px;color:var(--muted);line-height:1.4;margin-bottom:16px}
+.card{background:var(--card);border-radius:17px;padding:16px;margin-bottom:14px;box-shadow:0 2px 12px rgba(15,23,42,.05)}
+h2{font-size:18px;margin:0 0 12px}h3{font-size:16px;margin:0}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.full{grid-column:1/-1}
+label{display:block;color:var(--muted);font-size:12px;margin-bottom:5px}
+input,button,select{font:inherit;width:100%;border-radius:10px}
+input,select{padding:11px 12px;border:1px solid var(--line);background:#fff;font-size:16px}
+button{border:0;padding:12px 13px;font-weight:650;cursor:pointer}
+.primary{background:var(--accent);color:#fff}.secondary{background:#e2e8f0;color:var(--txt)}
+button:disabled{opacity:.45}
+.metrics{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.metric{background:var(--soft);border-radius:12px;padding:12px}.k{font-size:11px;color:var(--muted)}.v{font-size:20px;font-weight:750;margin-top:3px}
+.good{color:var(--good)}.bad{color:var(--bad)}.warn{color:var(--warn)}
+.status{font-size:13px;margin-top:10px;line-height:1.45;min-height:18px}
+.section{border-top:1px solid var(--line);padding:14px 0}.section:first-child{border-top:0;padding-top:0}
+.rowhead{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.name{font-weight:750;font-size:17px}.meta{font-size:12px;color:var(--muted);line-height:1.45;margin-top:3px}
+.three{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.box{background:var(--soft);padding:10px;border-radius:10px}.box .v{font-size:15px}
+.pill{display:inline-block;background:#eff6ff;color:#1d4ed8;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:650;margin-top:6px}
+.mapitem{border-top:1px solid var(--line);padding:12px 0}.mapitem:first-child{border-top:0}
+.mapgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.note{font-size:12px;color:var(--muted);line-height:1.45}
+.hidden{display:none!important}
+.filelabel{display:block;background:var(--accent);color:#fff;text-align:center;padding:13px;border-radius:11px;font-weight:700;cursor:pointer}
+#csvFile{display:none}
+.smallbtn{font-size:12px;padding:8px 10px;width:auto}
+.details{margin-top:10px;font-size:12px;color:var(--muted)}
+details summary{cursor:pointer;font-weight:650;color:var(--txt)}
+table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
+td,th{padding:7px 5px;border-bottom:1px solid var(--line);text-align:right}td:first-child,th:first-child{text-align:left}
+@media(max-width:580px){.grid,.metrics,.three,.mapgrid{grid-template-columns:1fr}.v{font-size:18px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Trade Republic Portfolio</h1>
+<div class="subtitle">CSV importieren → ETFs einzeln auswerten → alle Einzelaktien gemeinsam mit einem World-ETF vergleichen.</div>
+
+<div class="card">
+<h2>1 · Trade-Republic-Export</h2>
+<label class="filelabel" for="csvFile">Transaktionsexport.csv auswählen</label>
+<input id="csvFile" type="file" accept=".csv,text/csv">
+<div id="fileStatus" class="status"></div>
+</div>
+
+<div class="card">
+<h2>2 · Kursdaten</h2>
+<div class="grid">
+ <div class="full">
+  <label>Twelve Data API-Key</label>
+  <input id="apiKey" type="password" placeholder="API-Key einmalig einfügen" autocomplete="off">
+ </div>
+ <div class="full">
+  <label style="display:flex;align-items:center;gap:8px;color:var(--txt);font-size:13px">
+   <input id="rememberKey" type="checkbox" style="width:auto">
+   API-Key auf diesem Gerät dauerhaft speichern
+  </label>
+ </div>
+ <div>
+  <label>World-ETF Benchmark</label>
+  <input id="benchSymbol" value="EUNL">
+ </div>
+ <div>
+  <label>Benchmark-Börse</label>
+  <input id="benchExchange" value="XETR">
+ </div>
+ <div class="full"><button class="secondary" id="saveSettings">Einstellungen speichern</button></div>
+</div>
+<p class="note">Voreinstellung: iShares Core MSCI World UCITS ETF über eine EUR-Notierung. Der API-Key wird standardmäßig nur für die aktuelle Browser-Sitzung gespeichert. Nur wenn du die Checkbox aktivierst, wird er dauerhaft im lokalen Browserspeicher abgelegt.</p>
+</div>
+
+<div class="card hidden" id="mappingCard">
+<h2>3 · Erkannte Wertpapiere</h2>
+<div class="note">Die App sucht automatisch eine passende Börsennotierung. EUR-Notierungen werden bevorzugt. Falsche Treffer kannst du vor der Kursabfrage korrigieren.</div>
+<div id="mappingList"></div>
+<button class="primary" id="loadPrices">Kurse laden & auswerten</button>
+<div id="priceStatus" class="status"></div>
+</div>
+
+<div class="card hidden" id="stockCard">
+<h2>Einzelaktien · Gesamt</h2>
+<div class="metrics">
+ <div class="metric"><div class="k">Käufe inkl. Gebühren</div><div class="v" id="stockBuys">–</div></div>
+ <div class="metric"><div class="k">Aktueller Bestand</div><div class="v" id="stockValue">–</div></div>
+ <div class="metric"><div class="k">Aktien-Gesamtperformance</div><div class="v" id="stockPerf">–</div></div>
+ <div class="metric"><div class="k">World-ETF Vergleich</div><div class="v" id="benchPerf">–</div></div>
+ <div class="metric full"><div class="k">Out-/Underperformance</div><div class="v" id="alpha">–</div></div>
+</div>
+<div class="three">
+ <div class="box"><div class="k">Realisierte Verkaufserlöse</div><div class="v" id="stockSells">–</div></div>
+ <div class="box"><div class="k">Dividenden netto</div><div class="v" id="stockDivs">–</div></div>
+ <div class="box"><div class="k">Gewinn / Verlust gesamt</div><div class="v" id="stockPL">–</div></div>
+</div>
+<details class="details">
+<summary>Berechnung anzeigen</summary>
+<p>Bei jedem Aktienkauf wird derselbe eingesetzte Betrag virtuell in den World-ETF investiert. Bei einem Aktienverkauf wird derselbe Anteil der zugehörigen virtuellen ETF-Position verkauft. Offene Positionen werden mit den aktuellen Kursen bewertet. Dividenden sowie Gebühren/Steuern werden bei den Aktien berücksichtigt.</p>
+</details>
+</div>
+
+<div class="card hidden" id="etfCard">
+<h2>ETFs · einzeln</h2>
+<div id="etfList"></div>
+</div>
+
+<div class="card hidden" id="otherCard">
+<h2>Nicht einbezogen</h2>
+<div id="otherText" class="note"></div>
+</div>
+
+<div class="card hidden" id="txCard">
+<details>
+<summary>Importierte Transaktionen</summary>
+<div style="overflow:auto"><table id="txTable"></table></div>
+</details>
+</div>
+</div>
+
+<script>
+const SKEY="tr_tracker_settings_v3", MKEY="tr_tracker_mapping_v3";
+let rows=[], instruments={}, mapping=JSON.parse(localStorage.getItem(MKEY)||"{}");
+let currentPrices={}, benchmarkSeries=[], benchmarkCurrent=null;
+
+const $=id=>document.getElementById(id);
+const money=x=>Number(x||0).toLocaleString("de-DE",{style:"currency",currency:"EUR"});
+const pct=x=>Number(x||0).toLocaleString("de-DE",{minimumFractionDigits:2,maximumFractionDigits:2})+" %";
+const color=(el,x)=>{el.classList.remove("good","bad");el.classList.add(x>=0?"good":"bad")};
+const n=v=>{if(v===null||v===undefined||v==="")return 0;let x=parseFloat(String(v).replace(",","."));return Number.isFinite(x)?x:0};
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+
+function parseCSV(text){
+ let out=[], row=[], cur="", quote=false;
+ for(let i=0;i<text.length;i++){
+  const c=text[i], next=text[i+1];
+  if(c=='"'){
+   if(quote && next=='"'){cur+='"';i++} else quote=!quote;
+  } else if(c==',' && !quote){row.push(cur);cur=""}
+  else if((c=='\n'||c=='\r')&&!quote){
+   if(c=='\r'&&next=='\n')i++;
+   row.push(cur);cur="";
+   if(row.some(x=>x!==""))out.push(row);
+   row=[];
+  } else cur+=c;
+ }
+ if(cur||row.length){row.push(cur);out.push(row)}
+ if(out.length<2)return [];
+ const head=out[0].map(x=>x.trim());
+ return out.slice(1).map(r=>Object.fromEntries(head.map((h,i)=>[h,r[i]??""])));
+}
+
+function loadSettings(){
+ let persistent=JSON.parse(localStorage.getItem(SKEY)||"{}");
+ let sessionKey=sessionStorage.getItem("tr_tracker_api_key")||"";
+ $("apiKey").value=persistent.apiKey||sessionKey||"";
+ $("rememberKey").checked=Boolean(persistent.apiKey);
+ $("benchSymbol").value=persistent.benchSymbol||"EUNL";
+ $("benchExchange").value=persistent.benchExchange||"XETR";
+}
+function saveSettings(){
+ const apiKey=$("apiKey").value.trim();
+ const remember=$("rememberKey").checked;
+ const s={
+   benchSymbol:$("benchSymbol").value.trim().toUpperCase(),
+   benchExchange:$("benchExchange").value.trim().toUpperCase()
+ };
+ if(remember && apiKey){
+   s.apiKey=apiKey;
+   localStorage.setItem(SKEY,JSON.stringify(s));
+   sessionStorage.removeItem("tr_tracker_api_key");
+ }else{
+   localStorage.setItem(SKEY,JSON.stringify(s));
+   if(apiKey) sessionStorage.setItem("tr_tracker_api_key",apiKey);
+   else sessionStorage.removeItem("tr_tracker_api_key");
+ }
+ return {...s,apiKey};
+}
+
+$("saveSettings").onclick=()=>{
+ const s=saveSettings();
+ $("priceStatus").textContent=$("rememberKey").checked
+   ?"Einstellungen gespeichert. API-Key wird lokal auf diesem Gerät gespeichert."
+   :"Einstellungen gespeichert. API-Key gilt nur für diese Browser-Sitzung.";
+};
+
+$("csvFile").addEventListener("change",async e=>{
+ const f=e.target.files[0];if(!f)return;
+ try{
+  const text=await f.text(); rows=parseCSV(text);
+  if(!rows.length||!("asset_class" in rows[0])||!("type" in rows[0]))throw new Error("CSV-Format nicht erkannt.");
+  rows.sort((a,b)=>(a.datetime||a.date).localeCompare(b.datetime||b.date));
+  buildInstruments();
+  $("fileStatus").innerHTML=`<span class="good">${rows.length} Transaktionen erkannt.</span> ${Object.keys(instruments).length} Aktien/ETFs gefunden.`;
+  $("mappingCard").classList.remove("hidden");$("txCard").classList.remove("hidden");
+  renderTransactions();
+  await autoResolve();
+ }catch(err){$("fileStatus").innerHTML=`<span class="bad">${esc(err.message)}</span>`}
+});
+
+function buildInstruments(){
+ instruments={};
+ for(const r of rows){
+  if(!["STOCK","FUND"].includes(r.asset_class))continue;
+  if(!r.symbol)continue;
+  if(!instruments[r.symbol])instruments[r.symbol]={isin:r.symbol,name:r.name||r.symbol,asset_class:r.asset_class,netShares:0};
+  if(r.type==="BUY"||r.type==="SELL")instruments[r.symbol].netShares+=n(r.shares);
+ }
+}
+
+function apiSettings(){
+ const s=saveSettings(); if(!s.apiKey)throw new Error("Bitte zuerst den Twelve-Data-API-Key eintragen.");return s;
+}
+async function td(endpoint,params={}){
+ const s=apiSettings(), u=new URL("https://api.twelvedata.com/"+endpoint);
+ Object.entries(params).forEach(([k,v])=>{if(v!==""&&v!==null&&v!==undefined)u.searchParams.set(k,v)});
+ u.searchParams.set("apikey",s.apiKey);
+ const res=await fetch(u); const d=await res.json();
+ if(!res.ok||d.status==="error"||d.code)throw new Error(d.message||("API-Fehler "+res.status));
+ return d;
+}
+
+async function autoResolve(){
+ const list=$("mappingList");list.innerHTML="";
+ const open=Object.values(instruments).filter(x=>Math.abs(x.netShares)>1e-8);
+ if(!open.length){list.innerHTML='<div class="note">Keine offenen Aktien-/ETF-Positionen vorhanden.</div>';return}
+ $("priceStatus").textContent="Wertpapiere werden automatisch zugeordnet …";
+ for(const inst of open){
+  if(!mapping[inst.isin]){
+   try{
+    let d=await td("symbol_search",{symbol:inst.name,outputsize:20});
+    let arr=d.data||[];
+    let want=inst.asset_class==="FUND"?"ETF":"Common Stock";
+    let cand=arr.filter(x=>x.instrument_type===want);
+    if(!cand.length)cand=arr;
+    let eur=cand.filter(x=>x.currency==="EUR");
+    let best=(eur.length?eur:cand)[0];
+    if(best)mapping[inst.isin]={symbol:best.symbol,exchange:best.exchange||"",currency:best.currency||"",resolvedName:best.instrument_name||""};
+   }catch(e){}
+  }
+ }
+ localStorage.setItem(MKEY,JSON.stringify(mapping));renderMapping();
+ $("priceStatus").textContent="Zuordnung abgeschlossen. Bitte kurz prüfen und anschließend Kurse laden.";
+}
+
+function renderMapping(){
+ const open=Object.values(instruments).filter(x=>Math.abs(x.netShares)>1e-8);
+ $("mappingList").innerHTML=open.map(inst=>{
+  const m=mapping[inst.isin]||{};
+  return `<div class="mapitem">
+   <div class="name">${esc(inst.name)}</div>
+   <div class="meta">${esc(inst.isin)} · ${inst.asset_class==="FUND"?"ETF":"Aktie"} · Bestand ${inst.netShares.toLocaleString("de-DE",{maximumFractionDigits:6})}</div>
+   <div class="mapgrid">
+    <div><label>API-Ticker</label><input data-map="${esc(inst.isin)}" data-key="symbol" value="${esc(m.symbol||"")}"></div>
+    <div><label>Börse (optional)</label><input data-map="${esc(inst.isin)}" data-key="exchange" value="${esc(m.exchange||"")}"></div>
+   </div>
+   <div class="meta">${m.resolvedName?`Gefunden: ${esc(m.resolvedName)} · ${esc(m.currency||"")}`:"Noch nicht eindeutig gefunden"}</div>
+  </div>`
+ }).join("");
+ document.querySelectorAll("[data-map]").forEach(inp=>inp.onchange=()=>{
+  let id=inp.dataset.map; mapping[id]=mapping[id]||{};mapping[id][inp.dataset.key]=inp.value.trim();
+  localStorage.setItem(MKEY,JSON.stringify(mapping));
+ });
+}
+
+async function quoteEUR(inst){
+ const m=mapping[inst.isin]; if(!m||!m.symbol)throw new Error("Kein API-Ticker für "+inst.name);
+ let q=await td("quote",{symbol:m.symbol,exchange:m.exchange||undefined});
+ let p=n(q.close||q.price), currency=q.currency||m.currency||"";
+ if(!p)throw new Error("Kein Kurs für "+inst.name);
+ if(currency && currency!=="EUR"){
+  let fx=await td("price",{symbol:currency+"/EUR"});
+  p*=n(fx.price);
+ }
+ return p;
+}
+
+async function getBenchmarkSeries(){
+ const s=apiSettings();
+ const stockRows=rows.filter(r=>r.asset_class==="STOCK"&&["BUY","SELL"].includes(r.type));
+ if(!stockRows.length)return;
+ let earliest=stockRows[0].date;
+ let d=await td("time_series",{symbol:s.benchSymbol,exchange:s.benchExchange,interval:"1day",start_date:earliest,outputsize:5000});
+ benchmarkSeries=(d.values||[]).map(x=>({date:x.datetime.slice(0,10),close:n(x.close)})).sort((a,b)=>a.date.localeCompare(b.date));
+ let q=await td("quote",{symbol:s.benchSymbol,exchange:s.benchExchange});
+ benchmarkCurrent=n(q.close||q.price);
+ let currency=q.currency||"EUR";
+ if(currency!=="EUR"){
+  let fx=await td("price",{symbol:currency+"/EUR"}); let rate=n(fx.price);
+  benchmarkSeries=benchmarkSeries.map(x=>({...x,close:x.close*rate})); benchmarkCurrent*=rate;
+ }
+}
+function benchPrice(date){
+ let best=null;
+ for(const x of benchmarkSeries){if(x.date<=date)best=x;else break}
+ return best?best.close:null;
+}
+
+$("loadPrices").onclick=async()=>{
+ try{
+  saveSettings();
+  $("loadPrices").disabled=true;$("priceStatus").textContent="Aktuelle Kurse und Benchmark-Historie werden geladen …";
+  currentPrices={};
+  const open=Object.values(instruments).filter(x=>Math.abs(x.netShares)>1e-8);
+  for(let i=0;i<open.length;i++){
+   $("priceStatus").textContent=`Kurse laden: ${i+1}/${open.length} · ${open[i].name}`;
+   currentPrices[open[i].isin]=await quoteEUR(open[i]);
+  }
+  $("priceStatus").textContent="World-ETF-Historie wird geladen …";
+  await getBenchmarkSeries();
+  calculate();
+  $("priceStatus").innerHTML='<span class="good">Auswertung aktualisiert.</span>';
+ }catch(err){$("priceStatus").innerHTML=`<span class="bad">${esc(err.message)}</span>`}
+ finally{$("loadPrices").disabled=false}
+};
+
+function cashBuy(r){return Math.max(0,-(n(r.amount)+n(r.fee)+n(r.tax)))}
+function cashSell(r){return Math.max(0,n(r.amount)+n(r.fee)+n(r.tax))}
+function dividendNet(r){return n(r.amount)+n(r.tax)+n(r.fee)}
+
+function calculateStocks(){
+ let buyTotal=0,sellTotal=0,divTotal=0;
+ let states={}; // per ISIN actual shares + benchmark units
+ for(const r of rows.filter(x=>x.asset_class==="STOCK")){
+  let id=r.symbol;if(!id)continue;
+  states[id]=states[id]||{shares:0,benchUnits:0,benchRealized:0};
+  let st=states[id];
+  if(r.type==="BUY"){
+   let cost=cashBuy(r), bp=benchPrice(r.date);
+   buyTotal+=cost;st.shares+=Math.abs(n(r.shares));
+   if(bp)st.benchUnits+=cost/bp;
+  } else if(r.type==="SELL"){
+   let pre=st.shares, sold=Math.abs(n(r.shares)), frac=pre>0?Math.min(1,sold/pre):0, bp=benchPrice(r.date);
+   sellTotal+=cashSell(r);
+   if(bp&&frac>0){st.benchRealized+=st.benchUnits*frac*bp;st.benchUnits*=1-frac}
+   st.shares=Math.max(0,pre-sold);
+  } else if(r.type==="DIVIDEND"){divTotal+=dividendNet(r)}
+ }
+ let curVal=0, benchCur=0, benchRealized=0;
+ Object.entries(states).forEach(([id,st])=>{
+  curVal+=st.shares*(currentPrices[id]||0);
+  benchCur+=st.benchUnits*(benchmarkCurrent||0);benchRealized+=st.benchRealized;
+ });
+ let totalOut=sellTotal+divTotal+curVal, pl=totalOut-buyTotal, perf=buyTotal?pl/buyTotal*100:0;
+ let benchPL=benchRealized+benchCur-buyTotal, bperf=buyTotal?benchPL/buyTotal*100:0;
+ return {buyTotal,sellTotal,divTotal,curVal,pl,perf,bperf,alpha:perf-bperf};
+}
+
+function calculateFund(id){
+ let inst=instruments[id], shares=0,buy=0,sells=0, dividends=0;
+ for(const r of rows.filter(x=>x.asset_class==="FUND"&&x.symbol===id)){
+  if(r.type==="BUY"){shares+=Math.abs(n(r.shares));buy+=cashBuy(r)}
+  else if(r.type==="SELL"){shares-=Math.abs(n(r.shares));sells+=cashSell(r)}
+  else if(r.type==="DIVIDEND"){dividends+=dividendNet(r)}
+ }
+ shares=Math.max(0,shares);
+ let cur=shares*(currentPrices[id]||0), pl=sells+dividends+cur-buy, perf=buy?pl/buy*100:0;
+ return {shares,buy,sells,dividends,cur,pl,perf};
+}
+
+function calculate(){
+ const s=calculateStocks();
+ $("stockBuys").textContent=money(s.buyTotal);$("stockValue").textContent=money(s.curVal);
+ $("stockPerf").textContent=pct(s.perf);color($("stockPerf"),s.perf);
+ $("benchPerf").textContent=pct(s.bperf);color($("benchPerf"),s.bperf);
+ $("alpha").textContent=(s.alpha>=0?"+":"")+pct(s.alpha)+"-Pkt.";color($("alpha"),s.alpha);
+ $("stockSells").textContent=money(s.sellTotal);$("stockDivs").textContent=money(s.divTotal);
+ $("stockPL").textContent=money(s.pl);color($("stockPL"),s.pl);
+ $("stockCard").classList.remove("hidden");
+
+ const funds=Object.values(instruments).filter(x=>x.asset_class==="FUND");
+ $("etfList").innerHTML=funds.map(inst=>{
+  let x=calculateFund(inst.isin);
+  return `<div class="section">
+   <div class="rowhead"><div><div class="name">${esc(inst.name)}</div><div class="meta">${esc(inst.isin)} · aktueller Bestand ${x.shares.toLocaleString("de-DE",{maximumFractionDigits:6})}</div></div>
+   <div class="v ${x.perf>=0?"good":"bad"}">${pct(x.perf)}</div></div>
+   <div class="three">
+    <div class="box"><div class="k">Käufe</div><div class="v">${money(x.buy)}</div></div>
+    <div class="box"><div class="k">Aktueller Wert</div><div class="v">${money(x.cur)}</div></div>
+    <div class="box"><div class="k">Gewinn / Verlust</div><div class="v ${x.pl>=0?"good":"bad"}">${money(x.pl)}</div></div>
+   </div>
+   ${x.sells?`<div class="meta" style="margin-top:8px">Realisierte Verkaufserlöse: ${money(x.sells)}</div>`:""}
+  </div>`
+ }).join("");
+ $("etfCard").classList.remove("hidden");
+
+ const counts={};
+ rows.forEach(r=>{if(r.asset_class&&!["STOCK","FUND"].includes(r.asset_class))counts[r.asset_class]=(counts[r.asset_class]||0)+1});
+ if(Object.keys(counts).length){
+  $("otherText").textContent=Object.entries(counts).map(([k,v])=>`${k}: ${v} Transaktionen`).join(" · ")+" — derzeit nicht in die Aktien-/ETF-Auswertung einbezogen.";
+  $("otherCard").classList.remove("hidden");
+ }
+}
+
+function renderTransactions(){
+ let rel=rows.filter(r=>["STOCK","FUND"].includes(r.asset_class)&&["BUY","SELL","DIVIDEND"].includes(r.type));
+ $("txTable").innerHTML="<tr><th>Datum</th><th>Name</th><th>Typ</th><th>Betrag</th></tr>"+
+ rel.slice().reverse().map(r=>`<tr><td>${esc(r.date)}</td><td>${esc(r.name)}</td><td>${esc(r.type)}</td><td>${money(n(r.amount)+n(r.fee)+n(r.tax))}</td></tr>`).join("");
+}
+loadSettings();
+</script>
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./service-worker.js").catch(err => {
+      console.log("Service Worker konnte nicht registriert werden:", err);
+    });
+  });
+}
+</script>
+</body>
+</html>
