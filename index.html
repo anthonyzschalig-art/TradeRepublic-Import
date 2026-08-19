@@ -136,7 +136,7 @@ td,th{padding:7px 5px;border-bottom:1px solid var(--line);text-align:right}td:fi
 </div>
 
 <script>
-const SKEY="tr_tracker_settings_v3", MKEY="tr_tracker_mapping_v3";
+const SKEY="tr_tracker_settings_v3", MKEY="tr_tracker_mapping_v4";
 let rows=[], instruments={}, mapping=JSON.parse(localStorage.getItem(MKEY)||"{}");
 let currentPrices={}, benchmarkSeries=[], benchmarkCurrent=null;
 
@@ -237,33 +237,125 @@ async function td(endpoint,params={}){
  return d;
 }
 
-async function autoResolve(){
- const list=$("mappingList");list.innerHTML="";
- const open=Object.values(instruments).filter(x=>Math.abs(x.netShares)>1e-8);
- if(!open.length){list.innerHTML='<div class="note">Keine offenen Aktien-/ETF-Positionen vorhanden.</div>';return}
- $("priceStatus").textContent="Wertpapiere werden automatisch zugeordnet …";
- for(const inst of open){
-  if(!mapping[inst.isin]){
-   try{
-    let d=await td("symbol_search",{symbol:inst.name,outputsize:20});
-    let arr=d.data||[];
-    let want=inst.asset_class==="FUND"?"ETF":"Common Stock";
-    let cand=arr.filter(x=>x.instrument_type===want);
-    if(!cand.length)cand=arr;
-    let eur=cand.filter(x=>x.currency==="EUR");
-    let best=(eur.length?eur:cand)[0];
-    if(best)mapping[inst.isin]={symbol:best.symbol,exchange:best.exchange||"",currency:best.currency||"",resolvedName:best.instrument_name||""};
-   }catch(e){}
-  }
+function looksLikeApiKey(value){
+ const v=String(value||"").trim();
+ const api=$("apiKey").value.trim();
+ return !v || v===api || /^[a-f0-9]{28,40}$/i.test(v);
+}
+
+function validTicker(value){
+ const v=String(value||"").trim();
+ return !!v && !looksLikeApiKey(v) && /^[A-Za-z0-9._:\-\/]{1,30}$/.test(v);
+}
+
+function normalizeName(s){
+ return String(s||"")
+   .toLowerCase()
+   .replace(/\([^)]*\)/g," ")
+   .replace(/[^a-z0-9äöüß]+/g," ")
+   .replace(/\b(inc|corp|corporation|plc|ag|se|sa|nv|ltd|limited|holdings?|class|registered|shares?)\b/g," ")
+   .replace(/\s+/g," ")
+   .trim();
+}
+
+function candidateScore(inst,c){
+ let score=0;
+ const wantType=inst.asset_class==="FUND"?"ETF":"Common Stock";
+ if(c.instrument_type===wantType) score+=40;
+ if(c.currency==="EUR") score+=25;
+
+ const ex=String(c.exchange||"").toUpperCase();
+ if(["XETR","FWB","GETTEX","MUNICH","STUTTGART","BERLIN","DUSSELDORF","HAMBURG"].some(x=>ex.includes(x))) score+=12;
+
+ const a=normalizeName(inst.name), b=normalizeName(c.instrument_name);
+ if(a && b){
+   if(a===b) score+=50;
+   else if(a.includes(b)||b.includes(a)) score+=30;
+   const aw=new Set(a.split(" ").filter(x=>x.length>2));
+   const bw=new Set(b.split(" ").filter(x=>x.length>2));
+   let common=0; aw.forEach(x=>{if(bw.has(x))common++});
+   score+=Math.min(common*8,32);
  }
- localStorage.setItem(MKEY,JSON.stringify(mapping));renderMapping();
- $("priceStatus").textContent="Zuordnung abgeschlossen. Bitte kurz prüfen und anschließend Kurse laden.";
+ return score;
+}
+
+async function searchCandidates(inst){
+ const attempts=[];
+ if(inst.isin) attempts.push(inst.isin);
+ attempts.push(inst.name);
+
+ let all=[];
+ for(const q of attempts){
+   try{
+     const d=await td("symbol_search",{symbol:q,outputsize:30});
+     const arr=Array.isArray(d.data)?d.data:[];
+     all.push(...arr);
+     if(arr.length) break;
+   }catch(e){}
+ }
+
+ all=all.filter(c=>c && validTicker(c.symbol));
+
+ const seen=new Set();
+ all=all.filter(c=>{
+   const key=[c.symbol,c.exchange,c.currency].join("|");
+   if(seen.has(key)) return false;
+   seen.add(key);
+   return true;
+ });
+
+ all.sort((a,b)=>candidateScore(inst,b)-candidateScore(inst,a));
+ return all;
+}
+
+async function autoResolve(){
+ const open=Object.values(instruments).filter(x=>Math.abs(x.netShares)>1e-8);
+ if(!open.length){
+   $("mappingList").innerHTML='<div class="note">Keine offenen Aktien-/ETF-Positionen vorhanden.</div>';
+   return;
+ }
+
+ $("priceStatus").textContent="Wertpapiere werden automatisch zugeordnet …";
+
+ for(let i=0;i<open.length;i++){
+   const inst=open[i];
+
+   if(mapping[inst.isin] && !validTicker(mapping[inst.isin].symbol)){
+     delete mapping[inst.isin];
+   }
+
+   if(!mapping[inst.isin]){
+     $("priceStatus").textContent=`Zuordnung ${i+1}/${open.length}: ${inst.name}`;
+     try{
+       const candidates=await searchCandidates(inst);
+       const best=candidates[0];
+       if(best){
+         mapping[inst.isin]={
+           symbol:best.symbol,
+           exchange:best.exchange||"",
+           currency:best.currency||"",
+           resolvedName:best.instrument_name||"",
+           auto:true
+         };
+       }
+     }catch(e){}
+   }
+ }
+
+ localStorage.setItem(MKEY,JSON.stringify(mapping));
+ renderMapping();
+
+ const unresolved=open.filter(x=>!mapping[x.isin]||!validTicker(mapping[x.isin].symbol));
+ $("priceStatus").textContent=unresolved.length
+   ? `${open.length-unresolved.length} von ${open.length} Wertpapieren automatisch gefunden. ${unresolved.length} bitte manuell ergänzen.`
+   : `Alle ${open.length} Wertpapiere automatisch gefunden. Du kannst direkt „Kurse laden & auswerten“ drücken.`;
 }
 
 function renderMapping(){
  const open=Object.values(instruments).filter(x=>Math.abs(x.netShares)>1e-8);
  $("mappingList").innerHTML=open.map(inst=>{
-  const m=mapping[inst.isin]||{};
+  let m=mapping[inst.isin]||{};
+  if(!validTicker(m.symbol)) m={};
   return `<div class="mapitem">
    <div class="name">${esc(inst.name)}</div>
    <div class="meta">${esc(inst.isin)} · ${inst.asset_class==="FUND"?"ETF":"Aktie"} · Bestand ${inst.netShares.toLocaleString("de-DE",{maximumFractionDigits:6})}</div>
@@ -275,13 +367,22 @@ function renderMapping(){
   </div>`
  }).join("");
  document.querySelectorAll("[data-map]").forEach(inp=>inp.onchange=()=>{
-  let id=inp.dataset.map; mapping[id]=mapping[id]||{};mapping[id][inp.dataset.key]=inp.value.trim();
+  let id=inp.dataset.map; mapping[id]=mapping[id]||{};
+  const val=inp.value.trim();
+  if(inp.dataset.key==="symbol" && looksLikeApiKey(val)){
+    inp.value="";
+    delete mapping[id].symbol;
+    alert("Das ist kein gültiger Börsenticker. Der Twelve-Data-API-Key gehört nur in das Feld oben unter Kursdaten.");
+  }else{
+    mapping[id][inp.dataset.key]=val;
+  }
   localStorage.setItem(MKEY,JSON.stringify(mapping));
  });
 }
 
 async function quoteEUR(inst){
- const m=mapping[inst.isin]; if(!m||!m.symbol)throw new Error("Kein API-Ticker für "+inst.name);
+ const m=mapping[inst.isin];
+ if(!m||!validTicker(m.symbol))throw new Error("Kein gültiger API-Ticker für "+inst.name+". Bitte die Zuordnung prüfen.");
  let q=await td("quote",{symbol:m.symbol,exchange:m.exchange||undefined});
  let p=n(q.close||q.price), currency=q.currency||m.currency||"";
  if(!p)throw new Error("Kein Kurs für "+inst.name);
@@ -319,6 +420,10 @@ $("loadPrices").onclick=async()=>{
   $("loadPrices").disabled=true;$("priceStatus").textContent="Aktuelle Kurse und Benchmark-Historie werden geladen …";
   currentPrices={};
   const open=Object.values(instruments).filter(x=>Math.abs(x.netShares)>1e-8);
+  const unresolved=open.filter(x=>!mapping[x.isin]||!validTicker(mapping[x.isin].symbol));
+  if(unresolved.length){
+    throw new Error("Noch keine gültige Kurszuordnung für: "+unresolved.map(x=>x.name).join(", "));
+  }
   for(let i=0;i<open.length;i++){
    $("priceStatus").textContent=`Kurse laden: ${i+1}/${open.length} · ${open[i].name}`;
    currentPrices[open[i].isin]=await quoteEUR(open[i]);
@@ -419,9 +524,7 @@ loadSettings();
 <script>
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./service-worker.js").catch(err => {
-      console.log("Service Worker konnte nicht registriert werden:", err);
-    });
+    navigator.serviceWorker.register("./service-worker.js");
   });
 }
 </script>
