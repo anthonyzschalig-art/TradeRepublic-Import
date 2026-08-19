@@ -1,4 +1,4 @@
-const CACHE = "tr-portfolio-v7";
+const CACHE = "tr-portfolio-v8";
 const ASSETS = [
   "./",
   "./index.html",

@@ -140,21 +140,23 @@ td,th{padding:7px 5px;border-bottom:1px solid var(--line);text-align:right}td:fi
 
 <script>
 const SKEY="tr_tracker_settings_v3";
-const MKEY="tr_tracker_mapping_v7";
+const MKEY="tr_tracker_mapping_v8";
 
 function loadMappings(){
   const v5=JSON.parse(localStorage.getItem("tr_tracker_mapping_v5")||"{}");
   const v6=JSON.parse(localStorage.getItem("tr_tracker_mapping_v6")||"{}");
-  const v7=JSON.parse(localStorage.getItem(MKEY)||"{}");
+  const v7=JSON.parse(localStorage.getItem("tr_tracker_mapping_v7")||"{}");
+  const v8=JSON.parse(localStorage.getItem(MKEY)||"{}");
 
-  // Frühere, bereits erfolgreich gefundene Zuordnungen übernehmen.
-  // Neuere Daten (z. B. skip=true aus v6) haben Vorrang.
   const merged={...v5};
 
   for(const [id,val] of Object.entries(v6)){
     merged[id]={...(merged[id]||{}),...val};
   }
   for(const [id,val] of Object.entries(v7)){
+    merged[id]={...(merged[id]||{}),...val};
+  }
+  for(const [id,val] of Object.entries(v8)){
     merged[id]={...(merged[id]||{}),...val};
   }
 
@@ -462,7 +464,9 @@ function renderMapping(){
    </div>
    <div class="meta">${m.skip
       ? "Dieses Wertpapier wird bei der Auswertung übersprungen."
-      : (m.resolvedName?`Gefunden: ${esc(m.resolvedName)} · ${esc(m.currency||"")}`:"Noch nicht eindeutig gefunden")}</div>
+      : (m.resolvedName
+          ? `Gefunden: ${esc(m.resolvedName)} · ${esc(m.currency||"")}`
+          : "Keine Zuordnung gefunden – wird bei der Auswertung automatisch ausgelassen.")}</div>
    <div class="actions">
     <button class="${m.skip?"secondary":"danger"} smallbtn" data-skip="${esc(inst.isin)}">
       ${m.skip?"Wieder einbeziehen":"Überspringen"}
@@ -532,18 +536,37 @@ $("loadPrices").onclick=async()=>{
   $("loadPrices").disabled=true;$("priceStatus").textContent="Aktuelle Kurse und Benchmark-Historie werden geladen …";
   currentPrices={};
   const open=Object.values(instruments).filter(x=>Math.abs(x.netShares)>1e-8);
-  const unresolved=open.filter(x=>!mapping[x.isin]?.skip && (!mapping[x.isin]||!validTicker(mapping[x.isin].symbol)));
-  if(unresolved.length){
-    throw new Error("Noch keine gültige Kurszuordnung für: "+unresolved.map(x=>x.name).join(", "));
+
+  const active=open.filter(x =>
+    !mapping[x.isin]?.skip &&
+    mapping[x.isin] &&
+    validTicker(mapping[x.isin].symbol)
+  );
+
+  const autoExcluded=open.filter(x =>
+    !mapping[x.isin]?.skip &&
+    (!mapping[x.isin] || !validTicker(mapping[x.isin].symbol))
+  );
+
+  for(let i=0;i<active.length;i++){
+   $("priceStatus").textContent=`Kurse laden: ${i+1}/${active.length} · ${active[i].name}`;
+   currentPrices[active[i].isin]=await quoteEUR(active[i]);
   }
-  for(let i=0;i<open.length;i++){
-   $("priceStatus").textContent=`Kurse laden: ${i+1}/${open.length} · ${open[i].name}`;
-   currentPrices[open[i].isin]=await quoteEUR(open[i]);
+
+  if(autoExcluded.length){
+   $("priceStatus").textContent=
+     `${active.length} Positionen werden ausgewertet, ${autoExcluded.length} ohne Kurszuordnung werden ausgelassen …`;
   }
   $("priceStatus").textContent="World-ETF-Historie wird geladen …";
   await getBenchmarkSeries();
   calculate();
-  $("priceStatus").innerHTML='<span class="good">Auswertung aktualisiert.</span>';
+  const excludedCount=Object.values(instruments).filter(x =>
+    Math.abs(x.netShares)>1e-8 &&
+    (mapping[x.isin]?.skip || !mapping[x.isin] || !validTicker(mapping[x.isin].symbol))
+  ).length;
+  $("priceStatus").innerHTML=
+    '<span class="good">Auswertung aktualisiert.</span>'+
+    (excludedCount?` ${excludedCount} Position(en) wurden ausgelassen.`:"");
  }catch(err){$("priceStatus").innerHTML=`<span class="bad">${esc(err.message)}</span>`}
  finally{$("loadPrices").disabled=false}
 };
@@ -557,7 +580,7 @@ function calculateStocks(){
  let states={}; // per ISIN actual shares + benchmark units
  for(const r of rows.filter(x=>x.asset_class==="STOCK")){
   let id=r.symbol;if(!id)continue;
-  if(mapping[id]?.skip) continue;
+  if(mapping[id]?.skip || !mapping[id] || !validTicker(mapping[id].symbol)) continue;
   states[id]=states[id]||{shares:0,benchUnits:0,benchRealized:0};
   let st=states[id];
   if(r.type==="BUY"){
@@ -603,7 +626,12 @@ function calculate(){
  $("stockPL").textContent=money(s.pl);color($("stockPL"),s.pl);
  $("stockCard").classList.remove("hidden");
 
- const funds=Object.values(instruments).filter(x=>x.asset_class==="FUND"&&!mapping[x.isin]?.skip);
+ const funds=Object.values(instruments).filter(x =>
+   x.asset_class==="FUND" &&
+   !mapping[x.isin]?.skip &&
+   mapping[x.isin] &&
+   validTicker(mapping[x.isin].symbol)
+ );
  $("etfList").innerHTML=funds.map(inst=>{
   let x=calculateFund(inst.isin);
   return `<div class="section">
@@ -622,12 +650,19 @@ function calculate(){
  const counts={};
  rows.forEach(r=>{if(r.asset_class&&!["STOCK","FUND"].includes(r.asset_class))counts[r.asset_class]=(counts[r.asset_class]||0)+1});
  const skipped=Object.values(instruments).filter(x=>mapping[x.isin]?.skip);
+ const unresolved=Object.values(instruments).filter(x =>
+   !mapping[x.isin]?.skip &&
+   (!mapping[x.isin] || !validTicker(mapping[x.isin].symbol))
+ );
  const parts=[];
  if(Object.keys(counts).length){
    parts.push(Object.entries(counts).map(([k,v])=>`${k}: ${v} Transaktionen`).join(" · "));
  }
  if(skipped.length){
-   parts.push("Übersprungen: "+skipped.map(x=>x.name).join(", "));
+   parts.push("Manuell übersprungen: "+skipped.map(x=>x.name).join(", "));
+ }
+ if(unresolved.length){
+   parts.push("Ohne Kurszuordnung automatisch ausgelassen: "+unresolved.map(x=>x.name).join(", "));
  }
  if(parts.length){
   $("otherText").textContent=parts.join(" · ")+" — nicht in die Performance-Auswertung einbezogen.";
