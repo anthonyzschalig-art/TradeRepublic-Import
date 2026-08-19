@@ -91,7 +91,10 @@ td,th{padding:7px 5px;border-bottom:1px solid var(--line);text-align:right}td:fi
 
 <div class="card hidden" id="mappingCard">
 <h2>3 · Erkannte Wertpapiere</h2>
-<div class="note">Die App sucht automatisch eine passende Börsennotierung. EUR-Notierungen werden bevorzugt. Falsche Treffer kannst du vor der Kursabfrage korrigieren.</div>
+<div class="note">Die App sucht automatisch eine passende Börsennotierung. Bereits früher gefundene Zuordnungen werden wiederverwendet. EUR-Notierungen werden bevorzugt.</div>
+<div class="actions">
+ <button class="secondary smallbtn" id="retryMissing">Nur fehlende Zuordnungen erneut suchen</button>
+</div>
 <div id="mappingList"></div>
 <button class="primary" id="loadPrices">Kurse laden & auswerten</button>
 <div id="priceStatus" class="status"></div>
@@ -136,8 +139,30 @@ td,th{padding:7px 5px;border-bottom:1px solid var(--line);text-align:right}td:fi
 </div>
 
 <script>
-const SKEY="tr_tracker_settings_v3", MKEY="tr_tracker_mapping_v6";
-let rows=[], instruments={}, mapping=JSON.parse(localStorage.getItem(MKEY)||"{}");
+const SKEY="tr_tracker_settings_v3";
+const MKEY="tr_tracker_mapping_v7";
+
+function loadMappings(){
+  const v5=JSON.parse(localStorage.getItem("tr_tracker_mapping_v5")||"{}");
+  const v6=JSON.parse(localStorage.getItem("tr_tracker_mapping_v6")||"{}");
+  const v7=JSON.parse(localStorage.getItem(MKEY)||"{}");
+
+  // Frühere, bereits erfolgreich gefundene Zuordnungen übernehmen.
+  // Neuere Daten (z. B. skip=true aus v6) haben Vorrang.
+  const merged={...v5};
+
+  for(const [id,val] of Object.entries(v6)){
+    merged[id]={...(merged[id]||{}),...val};
+  }
+  for(const [id,val] of Object.entries(v7)){
+    merged[id]={...(merged[id]||{}),...val};
+  }
+
+  localStorage.setItem(MKEY,JSON.stringify(merged));
+  return merged;
+}
+
+let rows=[], instruments={}, mapping=loadMappings();
 let currentPrices={}, benchmarkSeries=[], benchmarkCurrent=null;
 
 const $=id=>document.getElementById(id);
@@ -214,6 +239,14 @@ $("csvFile").addEventListener("change",async e=>{
   await autoResolve();
  }catch(err){$("fileStatus").innerHTML=`<span class="bad">${esc(err.message)}</span>`}
 });
+
+$("retryMissing").onclick=async()=>{
+ if(!Object.keys(instruments).length){
+   $("priceStatus").textContent="Bitte zuerst den Trade-Republic-Export auswählen.";
+   return;
+ }
+ await autoResolve();
+};
 
 function buildInstruments(){
  instruments={};
@@ -363,10 +396,13 @@ async function autoResolve(){
      continue;
    }
 
+   // Bereits früher gefundene, gültige Ticker niemals erneut suchen.
+   if(mapping[inst.isin] && validTicker(mapping[inst.isin].symbol)){
+     continue;
+   }
+
    if(mapping[inst.isin] && !validTicker(mapping[inst.isin].symbol)){
-     const keepSkip=mapping[inst.isin].skip;
      delete mapping[inst.isin];
-     if(keepSkip) mapping[inst.isin]={skip:true};
    }
 
    if(!mapping[inst.isin]){
