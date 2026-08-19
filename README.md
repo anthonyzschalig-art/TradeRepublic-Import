@@ -31,7 +31,7 @@ Dazu:
     grafisch gegenübergestellt.
 
 Als Benchmark wird aktuell der **iShares Core MSCI World UCITS ETF
-(Acc)** verwendet (`EUNL`, Twelve-Data-Notierung `XDUS`).
+(Acc)** verwendet (`URTH`, Twelve-Data-Notierung `NYSE`).
 
 Damit wird nicht einfach die Entwicklung des MSCI World seit einem
 beliebigen Startdatum angezeigt. Die Benchmark berücksichtigt die

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Aktien vs EUNL">
+<meta name="apple-mobile-web-app-title" content="Aktien vs URTH">
 <link rel="manifest" href="./manifest.json">
 <meta name="theme-color" content="#0f172a">
 <title>Alle Einzelaktien vs. MSCI World</title>
@@ -109,7 +109,7 @@ button:disabled{opacity:.55}
 </div>
 
 <script>
-const BENCH={symbol:"EUNL",exchange:"XDUS",name:"iShares Core MSCI World UCITS ETF (Acc)"};
+const BENCH={symbol:"URTH",exchange:"NYSE",name:"iShares MSCI World ETF"};
 
 const DIRECT={
  "US0231351067":{symbol:"AMZN",exchange:"NASDAQ"},
@@ -222,7 +222,7 @@ $("csvFile").addEventListener("change",async e=>{
    "<b>CSV-Start:</b> "+esc(start)+"<br>"+
    "<b>Einzelaktien erkannt:</b> "+Object.keys(stockDefs).length+"<br>"+
    "<b>ETF/FUND-Transaktionen ausgeschlossen:</b> "+fundCount+"<br>"+
-   "<b>Benchmark:</b> EUNL (MSCI World)";
+   "<b>Benchmark:</b> URTH (MSCI World)";
 
   $("calcCard").classList.remove("hidden");
   $("fileStatus").innerHTML='<span class="good">CSV geladen. ETFs werden ignoriert.</span>';
@@ -518,7 +518,7 @@ $("runCalc").onclick=async()=>{
  const step=msg=>{done++;setProgress(done,totalSteps,msg)};
 
  try{
-  // 1) EUNL + FX first
+  // 1) URTH + FX first
   histories.__BENCH=await loadHistory(BENCH,startDate);step("MSCI-World-Historie geladen.");
   fxHistory=await loadFxHistory(startDate);step("USD/EUR-Historie geladen.");
 
