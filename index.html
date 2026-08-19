@@ -136,7 +136,7 @@ td,th{padding:7px 5px;border-bottom:1px solid var(--line);text-align:right}td:fi
 </div>
 
 <script>
-const SKEY="tr_tracker_settings_v3", MKEY="tr_tracker_mapping_v5";
+const SKEY="tr_tracker_settings_v3", MKEY="tr_tracker_mapping_v6";
 let rows=[], instruments={}, mapping=JSON.parse(localStorage.getItem(MKEY)||"{}");
 let currentPrices={}, benchmarkSeries=[], benchmarkCurrent=null;
 
@@ -359,8 +359,14 @@ async function autoResolve(){
  for(let i=0;i<open.length;i++){
    const inst=open[i];
 
+   if(mapping[inst.isin]?.skip){
+     continue;
+   }
+
    if(mapping[inst.isin] && !validTicker(mapping[inst.isin].symbol)){
+     const keepSkip=mapping[inst.isin].skip;
      delete mapping[inst.isin];
+     if(keepSkip) mapping[inst.isin]={skip:true};
    }
 
    if(!mapping[inst.isin]){
@@ -391,16 +397,18 @@ async function autoResolve(){
  localStorage.setItem(MKEY,JSON.stringify(mapping));
  renderMapping();
 
- const unresolved=open.filter(x=>!mapping[x.isin]||!validTicker(mapping[x.isin].symbol));
+ const unresolved=open.filter(x=>!mapping[x.isin]?.skip && (!mapping[x.isin]||!validTicker(mapping[x.isin].symbol)));
+ const skippedCount=open.filter(x=>mapping[x.isin]?.skip).length;
+ const foundCount=open.length-unresolved.length-skippedCount;
 
  if(unresolved.length){
    const names=unresolved.slice(0,5).map(x=>x.name).join(", ");
    $("priceStatus").innerHTML=
-     `<span class="warn">${open.length-unresolved.length} von ${open.length} automatisch gefunden.</span> `+
+     `<span class="warn">${foundCount} gefunden, ${skippedCount} übersprungen.</span> `+
      `${unresolved.length} offen: ${esc(names)}${unresolved.length>5?" …":""}`;
  }else{
    $("priceStatus").innerHTML=
-     `<span class="good">Alle ${open.length} Wertpapiere automatisch gefunden.</span> Du kannst direkt „Kurse laden & auswerten“ drücken.`;
+     `<span class="good">${foundCount} gefunden, ${skippedCount} übersprungen.</span> Du kannst direkt „Kurse laden & auswerten“ drücken.`;
  }
 }
 
@@ -413,10 +421,17 @@ function renderMapping(){
    <div class="name">${esc(inst.name)}</div>
    <div class="meta">${esc(inst.isin)} · ${inst.asset_class==="FUND"?"ETF":"Aktie"} · Bestand ${inst.netShares.toLocaleString("de-DE",{maximumFractionDigits:6})}</div>
    <div class="mapgrid">
-    <div><label>API-Ticker</label><input data-map="${esc(inst.isin)}" data-key="symbol" value="${esc(m.symbol||"")}"></div>
-    <div><label>Börse (optional)</label><input data-map="${esc(inst.isin)}" data-key="exchange" value="${esc(m.exchange||"")}"></div>
+    <div><label>API-Ticker</label><input data-map="${esc(inst.isin)}" data-key="symbol" value="${esc(m.symbol||"")}" ${m.skip?"disabled":""}></div>
+    <div><label>Börse (optional)</label><input data-map="${esc(inst.isin)}" data-key="exchange" value="${esc(m.exchange||"")}" ${m.skip?"disabled":""}></div>
    </div>
-   <div class="meta">${m.resolvedName?`Gefunden: ${esc(m.resolvedName)} · ${esc(m.currency||"")}`:"Noch nicht eindeutig gefunden"}</div>
+   <div class="meta">${m.skip
+      ? "Dieses Wertpapier wird bei der Auswertung übersprungen."
+      : (m.resolvedName?`Gefunden: ${esc(m.resolvedName)} · ${esc(m.currency||"")}`:"Noch nicht eindeutig gefunden")}</div>
+   <div class="actions">
+    <button class="${m.skip?"secondary":"danger"} smallbtn" data-skip="${esc(inst.isin)}">
+      ${m.skip?"Wieder einbeziehen":"Überspringen"}
+    </button>
+   </div>
   </div>`
  }).join("");
  document.querySelectorAll("[data-map]").forEach(inp=>inp.onchange=()=>{
@@ -430,6 +445,14 @@ function renderMapping(){
     mapping[id][inp.dataset.key]=val;
   }
   localStorage.setItem(MKEY,JSON.stringify(mapping));
+ });
+
+ document.querySelectorAll("[data-skip]").forEach(btn=>btn.onclick=()=>{
+   const id=btn.dataset.skip;
+   mapping[id]=mapping[id]||{};
+   mapping[id].skip=!mapping[id].skip;
+   localStorage.setItem(MKEY,JSON.stringify(mapping));
+   renderMapping();
  });
 }
 
@@ -473,7 +496,7 @@ $("loadPrices").onclick=async()=>{
   $("loadPrices").disabled=true;$("priceStatus").textContent="Aktuelle Kurse und Benchmark-Historie werden geladen …";
   currentPrices={};
   const open=Object.values(instruments).filter(x=>Math.abs(x.netShares)>1e-8);
-  const unresolved=open.filter(x=>!mapping[x.isin]||!validTicker(mapping[x.isin].symbol));
+  const unresolved=open.filter(x=>!mapping[x.isin]?.skip && (!mapping[x.isin]||!validTicker(mapping[x.isin].symbol)));
   if(unresolved.length){
     throw new Error("Noch keine gültige Kurszuordnung für: "+unresolved.map(x=>x.name).join(", "));
   }
@@ -498,6 +521,7 @@ function calculateStocks(){
  let states={}; // per ISIN actual shares + benchmark units
  for(const r of rows.filter(x=>x.asset_class==="STOCK")){
   let id=r.symbol;if(!id)continue;
+  if(mapping[id]?.skip) continue;
   states[id]=states[id]||{shares:0,benchUnits:0,benchRealized:0};
   let st=states[id];
   if(r.type==="BUY"){
@@ -543,7 +567,7 @@ function calculate(){
  $("stockPL").textContent=money(s.pl);color($("stockPL"),s.pl);
  $("stockCard").classList.remove("hidden");
 
- const funds=Object.values(instruments).filter(x=>x.asset_class==="FUND");
+ const funds=Object.values(instruments).filter(x=>x.asset_class==="FUND"&&!mapping[x.isin]?.skip);
  $("etfList").innerHTML=funds.map(inst=>{
   let x=calculateFund(inst.isin);
   return `<div class="section">
@@ -561,9 +585,19 @@ function calculate(){
 
  const counts={};
  rows.forEach(r=>{if(r.asset_class&&!["STOCK","FUND"].includes(r.asset_class))counts[r.asset_class]=(counts[r.asset_class]||0)+1});
+ const skipped=Object.values(instruments).filter(x=>mapping[x.isin]?.skip);
+ const parts=[];
  if(Object.keys(counts).length){
-  $("otherText").textContent=Object.entries(counts).map(([k,v])=>`${k}: ${v} Transaktionen`).join(" · ")+" — derzeit nicht in die Aktien-/ETF-Auswertung einbezogen.";
+   parts.push(Object.entries(counts).map(([k,v])=>`${k}: ${v} Transaktionen`).join(" · "));
+ }
+ if(skipped.length){
+   parts.push("Übersprungen: "+skipped.map(x=>x.name).join(", "));
+ }
+ if(parts.length){
+  $("otherText").textContent=parts.join(" · ")+" — nicht in die Performance-Auswertung einbezogen.";
   $("otherCard").classList.remove("hidden");
+ }else{
+  $("otherCard").classList.add("hidden");
  }
 }
 
