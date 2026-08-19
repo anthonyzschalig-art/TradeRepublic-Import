@@ -4,15 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="3 Aktien vs SPY">
+<meta name="apple-mobile-web-app-title" content="Aktien vs SPY">
 <link rel="manifest" href="./manifest.json">
 <meta name="theme-color" content="#0f172a">
-<title>ServiceNow · Meta · Microsoft vs. SPY</title>
+<title>Alle Einzelaktien vs. SPY</title>
 <style>
-:root{--bg:#f1f5f9;--card:#fff;--txt:#0f172a;--muted:#64748b;--line:#e2e8f0;--accent:#2563eb;--good:#15803d;--bad:#b91c1c;--soft:#f8fafc}
+:root{--bg:#f1f5f9;--card:#fff;--txt:#0f172a;--muted:#64748b;--line:#e2e8f0;--accent:#2563eb;--good:#15803d;--bad:#b91c1c;--warn:#92400e;--soft:#f8fafc}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-.wrap{max-width:850px;margin:auto;padding:18px 14px 45px}
+.wrap{max-width:900px;margin:auto;padding:18px 14px 45px}
 h1{font-size:25px;margin:4px 0}.sub,.note,.status,.meta{font-size:13px;color:var(--muted);line-height:1.45}
 .sub{margin-bottom:16px}.card{background:#fff;border-radius:17px;padding:16px;margin-bottom:14px;box-shadow:0 2px 12px rgba(15,23,42,.05)}
 h2{font-size:18px;margin:0 0 12px}
@@ -23,7 +23,7 @@ button{border:0;padding:12px 14px;font-weight:700;cursor:pointer}
 button:disabled{opacity:.55}
 .primary{background:var(--accent);color:#fff}.secondary{background:#e2e8f0;color:var(--txt)}
 .filelabel{display:block;background:var(--accent);color:#fff;text-align:center;padding:13px;border-radius:11px;font-weight:700;cursor:pointer}
-#csvFile{display:none}.hidden{display:none!important}.good{color:var(--good)}.bad{color:var(--bad)}
+#csvFile{display:none}.hidden{display:none!important}.good{color:var(--good)}.bad{color:var(--bad)}.warn{color:var(--warn)}
 .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-top:10px}
 .three{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:10px}
 .box{background:var(--soft);border-radius:11px;padding:11px}.k{font-size:11px;color:var(--muted)}.v{font-size:17px;font-weight:750;margin-top:3px}
@@ -33,14 +33,15 @@ button:disabled{opacity:.55}
 .chartWrap{width:100%;overflow:hidden}.chart{width:100%;height:auto;display:block}
 .legend{display:flex;gap:18px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:9px}
 .legend span{display:flex;align-items:center;gap:6px}.dot{width:10px;height:10px;border-radius:50%}
-.log{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;white-space:pre-wrap;background:#0f172a;color:#e2e8f0;border-radius:11px;padding:12px;max-height:260px;overflow:auto}
+.log{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;white-space:pre-wrap;background:#0f172a;color:#e2e8f0;border-radius:11px;padding:12px;max-height:280px;overflow:auto}
+.badge{display:inline-block;padding:3px 7px;border-radius:999px;background:#eff6ff;color:#1d4ed8;font-size:11px;margin-top:5px}
 @media(max-width:600px){.grid,.three{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <div class="wrap">
-<h1>3 Aktien vs. S&P 500</h1>
-<div class="sub">ServiceNow, Meta Platforms und Microsoft aus deinem Trade-Republic-Export gegen SPY. Ein Klick reicht – API-Limits werden automatisch abgewartet.</div>
+<h1>Einzelaktien vs. S&P 500</h1>
+<div class="sub">Alle Aktien aus dem Trade-Republic-CSV. ETFs/Fonds werden vollständig ausgeschlossen.</div>
 
 <div class="card">
 <h2>1 · API-Key</h2>
@@ -62,15 +63,15 @@ button:disabled{opacity:.55}
 <label>Startdatum</label>
 <input id="startDate" type="date">
 <div id="selectionText" class="note" style="margin-top:10px"></div>
-<button class="primary" id="runCalc" style="margin-top:12px">Berechnen</button>
+<button class="primary" id="runCalc" style="margin-top:12px">Alle Aktien berechnen</button>
 <div class="progress"><div id="progressBar"></div></div>
 <div id="runStatus" class="status"></div>
 </div>
 
 <div class="card hidden" id="summaryCard">
-<h2>Gesamtperformance</h2>
+<h2>Gesamtperformance Einzelaktien</h2>
 <div class="three">
- <div class="box"><div class="k">3-Aktien-Portfolio</div><div class="v" id="portPerf">–</div></div>
+ <div class="box"><div class="k">Einzelaktien gesamt</div><div class="v" id="portPerf">–</div></div>
  <div class="box"><div class="k">SPY-Benchmark</div><div class="v" id="spyPerf">–</div></div>
  <div class="box"><div class="k">Out-/Underperformance</div><div class="v" id="alpha">–</div></div>
 </div>
@@ -82,36 +83,59 @@ button:disabled{opacity:.55}
 
 <div class="card hidden" id="chartCard">
 <h2>Performanceverlauf</h2>
-<div class="note">Die Linien zeigen die kumulierte Performance. Nachkäufe erhöhen nicht einfach den Kurswert; die Benchmark erhält dieselben Kaufzeitpunkte und Beträge.</div>
+<div class="note">Cashflow-bereinigt: Käufe fließen am tatsächlichen Kaufdatum auch in die virtuelle SPY-Benchmark. Verkäufe reduzieren die zugehörige Benchmarkposition proportional.</div>
 <div class="chartWrap" id="chartWrap"></div>
 <div class="legend">
- <span><i class="dot" style="background:#2563eb"></i>3-Aktien-Portfolio</span>
+ <span><i class="dot" style="background:#2563eb"></i>Einzelaktien-Portfolio</span>
  <span><i class="dot" style="background:#64748b"></i>SPY-Benchmark</span>
 </div>
 </div>
 
 <div class="card hidden" id="assetsCard">
-<h2>Einzelwerte</h2>
+<h2>Berücksichtigte Einzelaktien</h2>
 <div id="assets"></div>
+</div>
+
+<div class="card hidden" id="excludedCard">
+<h2>Nicht einbezogen</h2>
+<div id="excluded" class="note"></div>
 </div>
 
 <div class="card">
 <h2>API-Status</h2>
-<div class="note" style="margin-bottom:8px">Die App nutzt höchstens 7 Requests innerhalb von 60 Sekunden. Bei einem Twelve-Data-Limit wartet sie automatisch und setzt danach fort.</div>
+<div class="note" style="margin-bottom:8px">Die App arbeitet automatisch in Blöcken. Nach spätestens 7 Requests innerhalb von 60 Sekunden wartet sie selbständig und setzt anschließend fort.</div>
 <div id="log" class="log">Noch keine API-Anfrage.</div>
 </div>
 </div>
 
 <script>
-const ASSETS={
- NOW:{symbol:"NOW",exchange:"NYSE",name:"ServiceNow",isin:"US81762P1021"},
- META:{symbol:"META",exchange:"NASDAQ",name:"Meta Platforms",isin:"US30303M1027"},
- MSFT:{symbol:"MSFT",exchange:"NASDAQ",name:"Microsoft",isin:"US5949181045"}
-};
 const BENCH={symbol:"SPY",exchange:"NYSE",name:"SPDR S&P 500 ETF Trust"};
 
-let rows=[], selectedRows=[], requestTimes=[], apiCalls=0;
-let histories={}, currentQuotes={}, fxHistory=[], currentFx=0;
+const DIRECT={
+ "US0231351067":{symbol:"AMZN",exchange:"NASDAQ"},
+ "US05464C1018":{symbol:"AXON",exchange:"NYSE"},
+ "US0567521085":{symbol:"BIDU",exchange:"NASDAQ"},
+ "US11135F1012":{symbol:"AVGO",exchange:"NASDAQ"},
+ "US1273871087":{symbol:"CDNS",exchange:"NASDAQ"},
+ "US18915M1071":{symbol:"NET",exchange:"NYSE"},
+ "US30303M1027":{symbol:"META",exchange:"NASDAQ"},
+ "US34959E1091":{symbol:"FTNT",exchange:"NASDAQ"},
+ "US4581401001":{symbol:"INTC",exchange:"NASDAQ"},
+ "US4612021034":{symbol:"INTU",exchange:"NASDAQ"},
+ "US50077B2079":{symbol:"KTOS",exchange:"NASDAQ"},
+ "US5949181045":{symbol:"MSFT",exchange:"NASDAQ"},
+ "US64110L1061":{symbol:"NFLX",exchange:"NASDAQ"},
+ "US6701002056":{symbol:"NVO",exchange:"NYSE"},
+ "US69608A1088":{symbol:"PLTR",exchange:"NASDAQ"},
+ "US7811541090":{symbol:"RBRK",exchange:"NYSE"},
+ "US81762P1021":{symbol:"NOW",exchange:"NYSE"},
+ "US91680M1071":{symbol:"UPST",exchange:"NASDAQ"},
+ "US92766K4031":{symbol:"SPCE",exchange:"NYSE"},
+ "US4627261005":{symbol:"IRBT",exchange:"NASDAQ"},
+ "FR0004056851":{symbol:"VALN",exchange:"NASDAQ"}
+};
+
+let rows=[], stockDefs={}, included={}, excluded={}, histories={}, fxHistory=[], requestTimes=[], apiCalls=0;
 
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
@@ -129,7 +153,7 @@ function log(msg){
 }
 
 function setProgress(done,total,text){
- $("progressBar").style.width=((done/total)*100)+"%";
+ $("progressBar").style.width=(total?done/total*100:0)+"%";
  if(text)$("runStatus").textContent=text;
 }
 
@@ -152,27 +176,35 @@ function parseCSV(text){
  return out.slice(1).map(r=>Object.fromEntries(head.map((h,i)=>[h,r[i]??""])));
 }
 
-function apiKey(){return $("apiKey").value.trim()||sessionStorage.getItem("tr_api_key_3stocks")||""}
+function apiKey(){return $("apiKey").value.trim()||sessionStorage.getItem("tr_allstocks_key")||""}
 
 $("saveKey").onclick=()=>{
  const k=$("apiKey").value.trim();
  if(!k){$("keyStatus").innerHTML='<span class="bad">Bitte API-Key eingeben.</span>';return}
- sessionStorage.setItem("tr_api_key_3stocks",k);
+ sessionStorage.setItem("tr_allstocks_key",k);
  $("keyStatus").innerHTML='<span class="good">Für diese Sitzung gespeichert.</span>';
 };
 
 window.addEventListener("load",()=>{
- const k=sessionStorage.getItem("tr_api_key_3stocks");
+ const k=sessionStorage.getItem("tr_allstocks_key");
  if(k)$("apiKey").value=k;
 });
-
-function assetForRow(r){
- return Object.values(ASSETS).find(a=>r.symbol===a.isin) || null;
-}
 
 function earliestDate(rs){
  const d=rs.map(r=>r.date).filter(Boolean).sort();
  return d.length?d[0]:"";
+}
+
+function buildStockDefs(){
+ stockDefs={};
+ for(const r of rows){
+  if(r.asset_class!=="STOCK"||!r.symbol)continue;
+  if(!stockDefs[r.symbol])stockDefs[r.symbol]={isin:r.symbol,name:r.name||r.symbol,rows:[]};
+  stockDefs[r.symbol].rows.push(r);
+ }
+ for(const d of Object.values(stockDefs)){
+  d.rows.sort((a,b)=>(a.datetime||a.date).localeCompare(b.datetime||b.date));
+ }
 }
 
 $("csvFile").addEventListener("change",async e=>{
@@ -181,21 +213,19 @@ $("csvFile").addEventListener("change",async e=>{
   rows=parseCSV(await f.text());
   if(!rows.length)throw new Error("CSV konnte nicht gelesen werden.");
 
-  selectedRows=rows.filter(r=>assetForRow(r));
-  const found=Object.values(ASSETS).filter(a=>selectedRows.some(r=>r.symbol===a.isin));
-
-  if(!found.length)throw new Error("Keine der drei Testaktien im Export gefunden.");
-
+  buildStockDefs();
+  const fundCount=rows.filter(r=>r.asset_class==="FUND").length;
   const start=earliestDate(rows);
   $("startDate").value=start;
 
   $("selectionText").innerHTML=
    "<b>CSV-Start:</b> "+esc(start)+"<br>"+
-   "<b>Gefunden:</b> "+found.map(a=>a.name).join(", ")+"<br>"+
+   "<b>Einzelaktien erkannt:</b> "+Object.keys(stockDefs).length+"<br>"+
+   "<b>ETF/FUND-Transaktionen ausgeschlossen:</b> "+fundCount+"<br>"+
    "<b>Benchmark:</b> SPY";
 
   $("calcCard").classList.remove("hidden");
-  $("fileStatus").innerHTML='<span class="good">CSV geladen.</span>';
+  $("fileStatus").innerHTML='<span class="good">CSV geladen. ETFs werden ignoriert.</span>';
  }catch(err){
   $("fileStatus").innerHTML='<span class="bad">'+esc(err.message)+'</span>';
  }
@@ -205,8 +235,7 @@ function secondsToNextWindow(){
  const now=Date.now();
  requestTimes=requestTimes.filter(t=>now-t<61000);
  if(requestTimes.length<7)return 0;
- const oldest=requestTimes[0];
- return Math.max(2,Math.ceil((61000-(now-oldest))/1000)+1);
+ return Math.max(2,Math.ceil((61000-(now-requestTimes[0]))/1000)+1);
 }
 
 async function waitForSlot(){
@@ -214,14 +243,14 @@ async function waitForSlot(){
   const sec=secondsToNextWindow();
   if(sec<=0)return;
   for(let s=sec;s>0;s--){
-   $("runStatus").textContent="API-Limit vorsorglich: Fortsetzung automatisch in "+s+" s …";
+   $("runStatus").textContent="API-Pause – Fortsetzung automatisch in "+s+" s …";
    await sleep(1000);
   }
  }
 }
 
 function isRateLimit(msg,status){
- return status===429 || /rate|limit|credits|too many|minute/i.test(String(msg||""));
+ return status===429||/rate|limit|credits|too many|minute/i.test(String(msg||""));
 }
 
 async function td(endpoint,params={},maxRetries=5){
@@ -239,159 +268,155 @@ async function td(endpoint,params={},maxRetries=5){
   apiCalls++;
   log("Call "+apiCalls+": "+endpoint+" "+JSON.stringify(params));
 
-  let res;
-  try{
-   res=await fetch(u,{cache:"no-store"});
-  }catch(e){
-   if(attempt===maxRetries)throw e;
-   log("Netzwerkfehler – erneuter Versuch.");
-   await sleep(5000);
-   continue;
-  }
-
-  let d={};
-  try{d=await res.json()}catch(e){}
-
+  const res=await fetch(u,{cache:"no-store"});
+  let d={};try{d=await res.json()}catch(e){}
   const msg=d.message||("HTTP "+res.status);
+
   if(!res.ok||d.status==="error"||d.code){
-   if(isRateLimit(msg,res.status) && attempt<maxRetries){
-    log("API-Limit erkannt: "+msg);
+   if(isRateLimit(msg,res.status)&&attempt<maxRetries){
+    log("Rate-Limit: "+msg);
     const sec=Math.max(5,secondsToNextWindow()||62);
     for(let s=sec;s>0;s--){
-     $("runStatus").textContent="Twelve Data pausiert – Fortsetzung automatisch in "+s+" s …";
+     $("runStatus").textContent="Twelve Data Limit – Fortsetzung automatisch in "+s+" s …";
      await sleep(1000);
     }
     continue;
    }
    throw new Error(msg);
   }
-
   return d;
  }
  throw new Error("API-Aufruf endgültig fehlgeschlagen.");
 }
 
+function cachedMapping(isin){
+ try{return JSON.parse(localStorage.getItem("tr_stockmap_"+isin)||"null")}catch{return null}
+}
+function saveMapping(isin,m){localStorage.setItem("tr_stockmap_"+isin,JSON.stringify(m))}
+
+function normalize(s){return String(s||"").toLowerCase().replace(/[^a-z0-9äöüß]+/g," ").trim()}
+
+function candidateScore(def,c){
+ let score=0;
+ if(c.instrument_type==="Common Stock")score+=40;
+ const ex=String(c.exchange||"").toUpperCase();
+ if(["NASDAQ","NYSE","AMEX"].some(x=>ex.includes(x)))score+=35;
+ if(c.currency==="USD")score+=20;
+ const a=normalize(def.name),b=normalize(c.instrument_name);
+ if(a&&b&&(a.includes(b)||b.includes(a)))score+=35;
+ return score;
+}
+
+async function resolveDef(def){
+ if(DIRECT[def.isin])return {...DIRECT[def.isin],name:def.name,isin:def.isin};
+ const cache=cachedMapping(def.isin);
+ if(cache)return {...cache,name:def.name,isin:def.isin};
+
+ const d=await td("symbol_search",{symbol:def.name,outputsize:30});
+ const arr=Array.isArray(d.data)?d.data:[];
+ if(!arr.length)throw new Error("Keine Symbolzuordnung gefunden.");
+
+ arr.sort((a,b)=>candidateScore(def,b)-candidateScore(def,a));
+ const best=arr[0];
+ if(!best?.symbol)throw new Error("Keine gültige Symbolzuordnung.");
+ const m={symbol:best.symbol,exchange:best.exchange||"",currency:best.currency||""};
+ saveMapping(def.isin,m);
+ return {...m,name:def.name,isin:def.isin};
+}
+
 async function loadHistory(asset,startDate){
  const d=await td("time_series",{
   symbol:asset.symbol,
-  exchange:asset.exchange,
+  exchange:asset.exchange||undefined,
   interval:"1day",
   start_date:startDate,
   outputsize:5000,
   order:"ASC"
  });
  const vals=Array.isArray(d.values)?d.values:[];
- if(!vals.length)throw new Error("Keine Historie für "+asset.symbol);
+ if(!vals.length)throw new Error("Keine Kursdaten.");
  return vals.map(x=>({date:x.datetime.slice(0,10),price:n(x.close)}))
             .filter(x=>x.price>0)
             .sort((a,b)=>a.date.localeCompare(b.date));
 }
 
 async function loadFxHistory(startDate){
- const d=await td("time_series",{
-  symbol:"USD/EUR",
-  interval:"1day",
-  start_date:startDate,
-  outputsize:5000,
-  order:"ASC"
- });
+ const d=await td("time_series",{symbol:"USD/EUR",interval:"1day",start_date:startDate,outputsize:5000,order:"ASC"});
  const vals=Array.isArray(d.values)?d.values:[];
  if(!vals.length)throw new Error("Keine USD/EUR-Historie.");
  return vals.map(x=>({date:x.datetime.slice(0,10),price:n(x.close)}))
-            .filter(x=>x.price>0)
-            .sort((a,b)=>a.date.localeCompare(b.date));
+            .filter(x=>x.price>0).sort((a,b)=>a.date.localeCompare(b.date));
 }
 
-async function loadQuote(asset){
- const d=await td("quote",{symbol:asset.symbol,exchange:asset.exchange});
- const p=n(d.close||d.price);
- if(!p)throw new Error("Kein aktueller Kurs für "+asset.symbol);
- return p;
-}
-
-async function loadCurrentFx(){
- const d=await td("price",{symbol:"USD/EUR"});
- const p=n(d.price);
- if(!p)throw new Error("Kein aktueller USD/EUR-Kurs.");
- return p;
-}
-
-function seriesValueAt(series,date){
+function valueAt(series,date){
  let lo=0,hi=series.length-1,best=null;
- while(lo<=hi){
-  const mid=(lo+hi)>>1;
-  if(series[mid].date<=date){best=series[mid];lo=mid+1}else hi=mid-1;
- }
+ while(lo<=hi){const mid=(lo+hi)>>1;if(series[mid].date<=date){best=series[mid];lo=mid+1}else hi=mid-1}
  return best?best.price:null;
+}
+
+function firstRelevantTx(def,startDate){
+ return def.rows.find(r=>r.date>=startDate&&["BUY","SELL"].includes(r.type));
 }
 
 function transactionCashBuy(r){return Math.max(0,-(n(r.amount)+n(r.fee)+n(r.tax)))}
 function transactionCashSell(r){return Math.max(0,n(r.amount)+n(r.fee)+n(r.tax))}
 function dividendNet(r){return n(r.amount)+n(r.tax)+n(r.fee)}
 
-function currentAssetStats(asset){
- const rs=selectedRows.filter(r=>r.symbol===asset.isin);
+function assetStats(def,asset,startDate){
+ const rs=def.rows.filter(r=>r.date>=startDate);
  let shares=0,buys=0,sells=0,divs=0;
  for(const r of rs){
   if(r.type==="BUY"){shares+=Math.abs(n(r.shares));buys+=transactionCashBuy(r)}
   else if(r.type==="SELL"){shares-=Math.abs(n(r.shares));sells+=transactionCashSell(r)}
   else if(r.type==="DIVIDEND"){divs+=dividendNet(r)}
  }
- const curEUR=(currentQuotes[asset.symbol]||0)*currentFx;
- const currentValue=Math.max(0,shares)*curEUR;
+ const hist=histories[def.isin];
+ const lastUSD=hist?.[hist.length-1]?.price||0;
+ const lastFx=fxHistory[fxHistory.length-1]?.price||0;
+ const currentValue=Math.max(0,shares)*lastUSD*lastFx;
  const pl=currentValue+sells+divs-buys;
  const perf=buys>0?pl/buys*100:0;
- return {shares,buys,sells,divs,currentValue,pl,perf,curEUR};
+ return {shares,buys,sells,divs,currentValue,pl,perf,lastUSD,lastEUR:lastUSD*lastFx};
 }
 
-function allTradingDates(startDate){
+function allDates(startDate){
  const set=new Set();
- for(const sym of ["NOW","META","MSFT","SPY"]){
-  (histories[sym]||[]).forEach(x=>{if(x.date>=startDate)set.add(x.date)});
- }
+ Object.values(histories).forEach(s=>(s||[]).forEach(x=>{if(x.date>=startDate)set.add(x.date)}));
  return [...set].sort();
 }
 
-function buildPerformanceCurves(startDate){
- const dates=allTradingDates(startDate);
+function buildCurves(startDate){
+ const dates=allDates(startDate);
  const states={};
- for(const a of Object.values(ASSETS)){
-  states[a.isin]={shares:0,benchUnits:0};
- }
+ Object.keys(included).forEach(isin=>states[isin]={shares:0,benchUnits:0});
  let cumBuys=0,cumSells=0,cumDivs=0,benchRealized=0;
  const port=[],bench=[];
-
  const txByDate={};
- for(const r of selectedRows){
-  if(r.date<startDate)continue;
-  (txByDate[r.date]??=[]).push(r);
+
+ for(const [isin,obj] of Object.entries(included)){
+  for(const r of obj.def.rows.filter(r=>r.date>=startDate)){
+   (txByDate[r.date]??=[]).push(r);
+  }
  }
 
  for(const date of dates){
-  const spyUSD=seriesValueAt(histories.SPY,date);
-  const fx=seriesValueAt(fxHistory,date);
+  const spyUSD=valueAt(histories.__SPY,date);
+  const fx=valueAt(fxHistory,date);
   if(!spyUSD||!fx)continue;
   const spyEUR=spyUSD*fx;
 
   for(const r of (txByDate[date]||[])){
-   const a=assetForRow(r); if(!a)continue;
-   const st=states[a.isin];
-
+   const st=states[r.symbol];
+   if(!st)continue;
    if(r.type==="BUY"){
     const cost=transactionCashBuy(r);
-    const qty=Math.abs(n(r.shares));
-    st.shares+=qty;
+    st.shares+=Math.abs(n(r.shares));
     cumBuys+=cost;
     st.benchUnits+=cost/spyEUR;
    }else if(r.type==="SELL"){
-    const before=st.shares;
-    const sold=Math.abs(n(r.shares));
-    const frac=before>0?Math.min(1,sold/before):0;
+    const before=st.shares,sold=Math.abs(n(r.shares)),frac=before>0?Math.min(1,sold/before):0;
     cumSells+=transactionCashSell(r);
-    if(frac>0){
-     benchRealized+=st.benchUnits*frac*spyEUR;
-     st.benchUnits*=1-frac;
-    }
+    if(frac>0){benchRealized+=st.benchUnits*frac*spyEUR;st.benchUnits*=1-frac}
     st.shares=Math.max(0,before-sold);
    }else if(r.type==="DIVIDEND"){
     cumDivs+=dividendNet(r);
@@ -399,144 +424,133 @@ function buildPerformanceCurves(startDate){
   }
 
   if(cumBuys<=0)continue;
-
-  let current=0,benchValue=0;
-  for(const a of Object.values(ASSETS)){
-   const st=states[a.isin];
-   const usd=seriesValueAt(histories[a.symbol]||[],date);
-   if(usd&&fx)current+=st.shares*usd*fx;
+  let cur=0,benchValue=0;
+  for(const [isin,obj] of Object.entries(included)){
+   const st=states[isin];
+   const usd=valueAt(histories[isin],date);
+   if(usd)cur+=st.shares*usd*fx;
    benchValue+=st.benchUnits*spyEUR;
   }
-
-  const p=(current+cumSells+cumDivs-cumBuys)/cumBuys*100;
-  const b=(benchValue+benchRealized-cumBuys)/cumBuys*100;
-
-  port.push({date,value:p});
-  bench.push({date,value:b});
+  port.push({date,value:(cur+cumSells+cumDivs-cumBuys)/cumBuys*100});
+  bench.push({date,value:(benchValue+benchRealized-cumBuys)/cumBuys*100});
  }
-
  return {port,bench};
 }
 
 function renderChart(port,bench){
- const width=800,height=360,padL=54,padR=18,padT=24,padB=42;
- const all=[...port,...bench];
- if(!all.length){$("chartWrap").innerHTML="<div class='note'>Keine Chartdaten.</div>";return}
-
- const vals=all.map(x=>x.value);
+ const width=820,height=360,padL=56,padR=18,padT=24,padB=42;
+ if(!port.length){$("chartWrap").innerHTML="<div class='note'>Keine Chartdaten.</div>";return}
+ const vals=[...port,...bench].map(x=>x.value);
  let min=Math.min(...vals,0),max=Math.max(...vals,0);
  if(max-min<2){max+=1;min-=1}
- const margin=(max-min)*0.10;max+=margin;min-=margin;
-
- const dateIndex=new Map(port.map((x,i)=>[x.date,i]));
+ const margin=(max-min)*.1;max+=margin;min-=margin;
  const N=Math.max(port.length,2);
  const x=i=>padL+i/(N-1)*(width-padL-padR);
  const y=v=>padT+(max-v)/(max-min)*(height-padT-padB);
-
- function path(data){
-  return data.map((p,i)=>(i?"L":"M")+x(i).toFixed(1)+","+y(p.value).toFixed(1)).join(" ");
- }
- function fmt(v){return v.toLocaleString("de-DE",{maximumFractionDigits:1})+" %"}
-
+ const path=data=>data.map((p,i)=>(i?"L":"M")+x(i).toFixed(1)+","+y(p.value).toFixed(1)).join(" ");
  let grid="";
  for(let i=0;i<=4;i++){
-  const v=max-i*(max-min)/4;
-  const yy=y(v);
-  grid+=`<line x1="${padL}" y1="${yy}" x2="${width-padR}" y2="${yy}" stroke="#e2e8f0" stroke-width="1"/>`;
-  grid+=`<text x="${padL-8}" y="${yy+4}" text-anchor="end" font-size="11" fill="#64748b">${fmt(v)}</text>`;
+  const v=max-i*(max-min)/4,yy=y(v);
+  grid+=`<line x1="${padL}" y1="${yy}" x2="${width-padR}" y2="${yy}" stroke="#e2e8f0"/>`;
+  grid+=`<text x="${padL-8}" y="${yy+4}" text-anchor="end" font-size="11" fill="#64748b">${v.toLocaleString("de-DE",{maximumFractionDigits:1})}%</text>`;
  }
-
- const labels=[];
- const ticks=4;
- for(let i=0;i<=ticks;i++){
-  const idx=Math.min(port.length-1,Math.round(i*(port.length-1)/ticks));
-  const d=port[idx]?.date||"";
-  if(!d)continue;
-  const xx=x(idx);
-  const dt=new Date(d+"T00:00:00");
-  const txt=dt.toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"});
-  labels.push(`<text x="${xx}" y="${height-12}" text-anchor="middle" font-size="11" fill="#64748b">${txt}</text>`);
+ let labels="";
+ for(let i=0;i<=4;i++){
+  const idx=Math.min(port.length-1,Math.round(i*(port.length-1)/4));
+  const d=port[idx]?.date;if(!d)continue;
+  labels+=`<text x="${x(idx)}" y="${height-12}" text-anchor="middle" font-size="11" fill="#64748b">${new Date(d+"T00:00:00").toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"})}</text>`;
  }
-
- const zeroY=y(0);
- const svg=`<svg class="chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Performancevergleich">
-  ${grid}
-  <line x1="${padL}" y1="${zeroY}" x2="${width-padR}" y2="${zeroY}" stroke="#94a3b8" stroke-dasharray="4 4"/>
-  <path d="${path(bench)}" fill="none" stroke="#64748b" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
-  <path d="${path(port)}" fill="none" stroke="#2563eb" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
-  ${labels.join("")}
- </svg>`;
- $("chartWrap").innerHTML=svg;
+ $("chartWrap").innerHTML=`<svg class="chart" viewBox="0 0 ${width} ${height}">
+ ${grid}
+ <line x1="${padL}" y1="${y(0)}" x2="${width-padR}" y2="${y(0)}" stroke="#94a3b8" stroke-dasharray="4 4"/>
+ <path d="${path(bench)}" fill="none" stroke="#64748b" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+ <path d="${path(port)}" fill="none" stroke="#2563eb" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+ ${labels}</svg>`;
 }
 
 function renderResults(startDate){
- const stats=Object.values(ASSETS).map(currentAssetStats);
- const totalBuys=stats.reduce((s,x)=>s+x.buys,0);
- const totalOut=stats.reduce((s,x)=>s+x.currentValue+x.sells+x.divs,0);
+ const stats=[];
+ for(const [isin,obj] of Object.entries(included)){
+  stats.push({def:obj.def,asset:obj.asset,stat:assetStats(obj.def,obj.asset,startDate)});
+ }
+ const totalBuys=stats.reduce((s,x)=>s+x.stat.buys,0);
+ const totalOut=stats.reduce((s,x)=>s+x.stat.currentValue+x.stat.sells+x.stat.divs,0);
  const portPerf=totalBuys>0?(totalOut-totalBuys)/totalBuys*100:0;
-
- const curves=buildPerformanceCurves(startDate);
+ const curves=buildCurves(startDate);
  const spyPerf=curves.bench.length?curves.bench[curves.bench.length-1].value:0;
  const alpha=portPerf-spyPerf;
 
- $("portPerf").textContent=pct(portPerf);
- $("portPerf").className="v "+(portPerf>=0?"good":"bad");
- $("spyPerf").textContent=pct(spyPerf);
- $("spyPerf").className="v "+(spyPerf>=0?"good":"bad");
- $("alpha").textContent=(alpha>=0?"+":"")+pct(alpha)+"-Pkt.";
- $("alpha").className="v "+(alpha>=0?"good":"bad");
- $("totalBuys").textContent=money(totalBuys);
- $("totalValue").textContent=money(totalOut);
+ $("portPerf").textContent=pct(portPerf);$("portPerf").className="v "+(portPerf>=0?"good":"bad");
+ $("spyPerf").textContent=pct(spyPerf);$("spyPerf").className="v "+(spyPerf>=0?"good":"bad");
+ $("alpha").textContent=(alpha>=0?"+":"")+pct(alpha)+"-Pkt.";$("alpha").className="v "+(alpha>=0?"good":"bad");
+ $("totalBuys").textContent=money(totalBuys);$("totalValue").textContent=money(totalOut);
 
- $("assets").innerHTML=stats.map((x,i)=>{
-  const a=Object.values(ASSETS)[i];
-  return `<div class="asset">
-    <div class="name">${a.name}</div>
-    <div class="meta">${a.symbol} · aktueller Kurs ${money(x.curEUR)}</div>
-    <div class="three">
-     <div class="box"><div class="k">Investiert</div><div class="v">${money(x.buys)}</div></div>
-     <div class="box"><div class="k">Aktueller Wert</div><div class="v">${money(x.currentValue)}</div></div>
-     <div class="box"><div class="k">Performance</div><div class="v ${x.perf>=0?"good":"bad"}">${pct(x.perf)}</div></div>
-    </div>
-   </div>`;
- }).join("");
+ $("assets").innerHTML=stats.sort((a,b)=>b.stat.currentValue-a.stat.currentValue).map(x=>`
+  <div class="asset">
+   <div class="name">${esc(x.def.name)}</div>
+   <div class="meta">${esc(x.asset.symbol)} ${x.asset.exchange?("@ "+esc(x.asset.exchange)):""} · ${esc(x.def.isin)}</div>
+   <div class="three">
+    <div class="box"><div class="k">Investiert</div><div class="v">${money(x.stat.buys)}</div></div>
+    <div class="box"><div class="k">Wert + Rückflüsse</div><div class="v">${money(x.stat.currentValue+x.stat.sells+x.stat.divs)}</div></div>
+    <div class="box"><div class="k">Performance</div><div class="v ${x.stat.perf>=0?"good":"bad"}">${pct(x.stat.perf)}</div></div>
+   </div>
+  </div>`).join("");
+
+ const ex=Object.values(excluded);
+ if(ex.length){
+  $("excluded").innerHTML=ex.map(x=>`<div class="asset"><b>${esc(x.name)}</b><br>${esc(x.reason)}</div>`).join("");
+  $("excludedCard").classList.remove("hidden");
+ }else $("excludedCard").classList.add("hidden");
 
  renderChart(curves.port,curves.bench);
-
- $("summaryCard").classList.remove("hidden");
- $("chartCard").classList.remove("hidden");
- $("assetsCard").classList.remove("hidden");
+ $("summaryCard").classList.remove("hidden");$("chartCard").classList.remove("hidden");$("assetsCard").classList.remove("hidden");
 }
 
 $("runCalc").onclick=async()=>{
  const startDate=$("startDate").value;
  if(!startDate){$("runStatus").innerHTML='<span class="bad">Bitte Startdatum wählen.</span>';return}
 
- $("runCalc").disabled=true;
- $("log").textContent="";
- $("progressBar").style.width="0%";
- apiCalls=0;requestTimes=[];histories={};currentQuotes={};fxHistory=[];currentFx=0;
- $("summaryCard").classList.add("hidden");$("chartCard").classList.add("hidden");$("assetsCard").classList.add("hidden");
+ $("runCalc").disabled=true;$("log").textContent="";$("progressBar").style.width="0%";
+ requestTimes=[];apiCalls=0;histories={};included={};excluded={};fxHistory=[];
+ $("summaryCard").classList.add("hidden");$("chartCard").classList.add("hidden");$("assetsCard").classList.add("hidden");$("excludedCard").classList.add("hidden");
 
- const tasksTotal=10;
- let done=0;
- const progress=msg=>{done++;setProgress(done,tasksTotal,msg)};
+ const defs=Object.values(stockDefs);
+ let totalSteps=defs.length*2+2,done=0;
+ const step=msg=>{done++;setProgress(done,totalSteps,msg)};
 
  try{
-  histories.NOW=await loadHistory(ASSETS.NOW,startDate);progress("ServiceNow-Historie geladen.");
-  histories.META=await loadHistory(ASSETS.META,startDate);progress("Meta-Historie geladen.");
-  histories.MSFT=await loadHistory(ASSETS.MSFT,startDate);progress("Microsoft-Historie geladen.");
-  histories.SPY=await loadHistory(BENCH,startDate);progress("SPY-Historie geladen.");
-  fxHistory=await loadFxHistory(startDate);progress("USD/EUR-Historie geladen.");
+  // 1) SPY + FX first
+  histories.__SPY=await loadHistory(BENCH,startDate);step("SPY-Historie geladen.");
+  fxHistory=await loadFxHistory(startDate);step("USD/EUR-Historie geladen.");
 
-  currentQuotes.NOW=await loadQuote(ASSETS.NOW);progress("ServiceNow aktuell geladen.");
-  currentQuotes.META=await loadQuote(ASSETS.META);progress("Meta aktuell geladen.");
-  currentQuotes.MSFT=await loadQuote(ASSETS.MSFT);progress("Microsoft aktuell geladen.");
-  currentQuotes.SPY=await loadQuote(BENCH);progress("SPY aktuell geladen.");
-  currentFx=await loadCurrentFx();progress("USD/EUR aktuell geladen.");
+  for(const def of defs){
+   const tx=firstRelevantTx(def,startDate);
+   if(!tx){excluded[def.isin]={name:def.name,reason:"Keine Kauf-/Verkaufstransaktion im gewählten Zeitraum."};step(def.name+" ohne relevante Transaktion.");step("");continue}
+   if(tx.type==="SELL"){
+    excluded[def.isin]={name:def.name,reason:"Historie unvollständig: erste Transaktion im Zeitraum ist ein Verkauf. Einstand vor dem CSV-Start ist unbekannt."};
+    step(def.name+" wegen unvollständiger Historie ausgelassen.");step("");continue;
+   }
+
+   let asset;
+   try{
+    asset=await resolveDef(def);step(def.name+" zugeordnet: "+asset.symbol);
+   }catch(e){
+    excluded[def.isin]={name:def.name,reason:"Keine API-Zuordnung: "+e.message};step(def.name+" nicht zugeordnet.");step("");continue;
+   }
+
+   try{
+    histories[def.isin]=await loadHistory(asset,startDate);
+    included[def.isin]={def,asset};
+    step(def.name+" Kursreihe geladen.");
+   }catch(e){
+    excluded[def.isin]={name:def.name,reason:"Keine nutzbare Kursreihe: "+e.message};
+    delete histories[def.isin];
+    step(def.name+" Kursdaten nicht verfügbar.");
+   }
+  }
 
   renderResults(startDate);
-  $("runStatus").innerHTML='<span class="good">Fertig. Alle Daten wurden automatisch geladen.</span>';
+  $("runStatus").innerHTML='<span class="good">Fertig.</span> '+Object.keys(included).length+' Aktien berücksichtigt, '+Object.keys(excluded).length+' ausgelassen.';
  }catch(err){
   $("runStatus").innerHTML='<span class="bad">'+esc(err.message)+'</span>';
   log("ABBRUCH: "+err.message);
