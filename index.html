@@ -7,35 +7,38 @@
 <meta name="apple-mobile-web-app-title" content="TR API Test">
 <link rel="manifest" href="./manifest.json">
 <meta name="theme-color" content="#0f172a">
-<title>TR API Test</title>
+<title>ServiceNow vs. SPY</title>
 <style>
-body{margin:0;background:#f1f5f9;color:#0f172a;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+:root{--bg:#f1f5f9;--card:#fff;--txt:#0f172a;--muted:#64748b;--line:#e2e8f0;--accent:#2563eb;--good:#15803d;--bad:#b91c1c;--soft:#f8fafc}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 .wrap{max-width:760px;margin:auto;padding:18px 14px 45px}
-.card{background:#fff;border-radius:17px;padding:16px;margin-bottom:14px;box-shadow:0 2px 12px rgba(15,23,42,.05)}
-h1{font-size:25px;margin:4px 0}.sub,.note,.status,.meta{font-size:13px;color:#64748b;line-height:1.45}
+h1{font-size:25px;margin:4px 0}.sub,.note,.status,.meta{font-size:13px;color:var(--muted);line-height:1.45}
+.sub{margin-bottom:16px}.card{background:#fff;border-radius:17px;padding:16px;margin-bottom:14px;box-shadow:0 2px 12px rgba(15,23,42,.05)}
 h2{font-size:18px;margin:0 0 12px}
-label{display:block;font-size:12px;color:#64748b;margin-bottom:5px}
+label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px}
 input,button{font:inherit;width:100%;border-radius:11px}
-input{padding:11px 12px;border:1px solid #e2e8f0;font-size:16px}
-button{border:0;padding:12px 14px;font-weight:700}.primary{background:#2563eb;color:white}.secondary{background:#e2e8f0}
-.filelabel{display:block;background:#2563eb;color:#fff;text-align:center;padding:13px;border-radius:11px;font-weight:700}
-#csvFile{display:none}.hidden{display:none}.good{color:#15803d}.bad{color:#b91c1c}
-.result{border-top:1px solid #e2e8f0;padding:14px 0}.result:first-child{border-top:0}
+input{padding:11px 12px;border:1px solid var(--line);font-size:16px;background:#fff}
+button{border:0;padding:12px 14px;font-weight:700;cursor:pointer}
+.primary{background:var(--accent);color:#fff}.secondary{background:#e2e8f0;color:var(--txt)}
+.filelabel{display:block;background:var(--accent);color:#fff;text-align:center;padding:13px;border-radius:11px;font-weight:700;cursor:pointer}
+#csvFile{display:none}.hidden{display:none!important}.good{color:var(--good)}.bad{color:var(--bad)}
+.result{border-top:1px solid var(--line);padding:14px 0}.result:first-child{border-top:0}
 .name{font-size:18px;font-weight:750}.grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}
-.box{background:#f8fafc;border-radius:11px;padding:11px}.k{font-size:11px;color:#64748b}.v{font-size:17px;font-weight:750;margin-top:3px}
-.log{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;white-space:pre-wrap;background:#0f172a;color:#e2e8f0;border-radius:11px;padding:12px;max-height:260px;overflow:auto}
+.box{background:var(--soft);border-radius:11px;padding:11px}.k{font-size:11px;color:var(--muted)}.v{font-size:17px;font-weight:750;margin-top:3px}
+.log{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;white-space:pre-wrap;background:#0f172a;color:#e2e8f0;border-radius:11px;padding:12px;max-height:300px;overflow:auto}
 @media(max-width:560px){.grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <div class="wrap">
-<h1>Trade Republic · API-Test</h1>
-<div class="sub">Nur ServiceNow und ein ETF werden abgefragt.</div>
+<h1>ServiceNow vs. S&P 500</h1>
+<div class="sub">Technischer Test mit einem festen Benchmark: SPDR S&P 500 ETF Trust (SPY). Keine ETF-Suche mehr nötig.</div>
 
 <div class="card">
 <h2>1 · API-Key</h2>
 <label>Twelve Data API-Key</label>
-<input id="apiKey" type="password" autocomplete="off">
+<input id="apiKey" type="password" autocomplete="off" placeholder="API-Key einfügen">
 <button class="secondary" id="saveKey" style="margin-top:10px">Für diese Sitzung speichern</button>
 <div id="keyStatus" class="status"></div>
 </div>
@@ -47,102 +50,250 @@ button{border:0;padding:12px 14px;font-weight:700}.primary{background:#2563eb;co
 <div id="fileStatus" class="status"></div>
 </div>
 
-<div class="card hidden" id="selectionCard">
+<div class="card hidden" id="testCard">
 <h2>3 · Test</h2>
 <div id="selectionText" class="note"></div>
-<button class="primary" id="runTest" style="margin-top:12px">ServiceNow + ETF testen</button>
+<button class="primary" id="runTest" style="margin-top:12px">ServiceNow + SPY testen</button>
 <div id="runStatus" class="status"></div>
 </div>
 
-<div class="card hidden" id="resultsCard"><h2>Ergebnis</h2><div id="results"></div></div>
+<div class="card hidden" id="resultsCard">
+<h2>Ergebnis</h2>
+<div id="results"></div>
+</div>
 
-<div class="card"><h2>API-Protokoll</h2><div id="log" class="log">Noch keine API-Anfrage.</div></div>
+<div class="card">
+<h2>API-Protokoll</h2>
+<div class="note" style="margin-bottom:8px">Aktuelle und historische Kursabfragen werden einzeln protokolliert.</div>
+<div id="log" class="log">Noch keine API-Anfrage.</div>
+</div>
 </div>
 
 <script>
-let rows=[],serviceNow=null,selectedETF=null,apiCalls=0;
+const BENCH={symbol:"SPY",exchange:"NYSE",name:"SPDR S&P 500 ETF Trust"};
+let rows=[],serviceNow=null,apiCalls=0;
+
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 const n=v=>{let x=parseFloat(String(v??"").replace(",","."));return Number.isFinite(x)?x:0};
 const money=x=>Number(x||0).toLocaleString("de-DE",{style:"currency",currency:"EUR"});
+const pct=x=>Number(x||0).toLocaleString("de-DE",{minimumFractionDigits:2,maximumFractionDigits:2})+" %";
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-function log(msg){const e=$("log");if(e.textContent==="Noch keine API-Anfrage.")e.textContent="";e.textContent+="["+new Date().toLocaleTimeString("de-DE")+"] "+msg+"\n";e.scrollTop=e.scrollHeight}
+
+function log(msg){
+ const e=$("log");
+ if(e.textContent==="Noch keine API-Anfrage.")e.textContent="";
+ e.textContent+="["+new Date().toLocaleTimeString("de-DE")+"] "+msg+"\n";
+ e.scrollTop=e.scrollHeight;
+}
+
 function parseCSV(text){
  let out=[],row=[],cur="",quote=false;
- for(let i=0;i<text.length;i++){const c=text[i],next=text[i+1];
-  if(c==='"'){if(quote&&next==='"'){cur+='"';i++}else quote=!quote}
-  else if(c===','&&!quote){row.push(cur);cur=""}
-  else if((c==='\n'||c==='\r')&&!quote){if(c==='\r'&&next==='\n')i++;row.push(cur);cur="";if(row.some(x=>x!==""))out.push(row);row=[]}
-  else cur+=c}
+ for(let i=0;i<text.length;i++){
+   const c=text[i],next=text[i+1];
+   if(c==='"'){if(quote&&next==='"'){cur+='"';i++}else quote=!quote}
+   else if(c===','&&!quote){row.push(cur);cur=""}
+   else if((c==='\n'||c==='\r')&&!quote){
+     if(c==='\r'&&next==='\n')i++;
+     row.push(cur);cur="";
+     if(row.some(x=>x!==""))out.push(row);
+     row=[];
+   }else cur+=c;
+ }
  if(cur||row.length){row.push(cur);out.push(row)}
  if(out.length<2)return [];
  const head=out[0].map(x=>x.trim());
  return out.slice(1).map(r=>Object.fromEntries(head.map((h,i)=>[h,r[i]??""])));
 }
+
 function apiKey(){return $("apiKey").value.trim()||sessionStorage.getItem("tr_api_test_key")||""}
-$("saveKey").onclick=()=>{const k=$("apiKey").value.trim();if(!k){$("keyStatus").innerHTML='<span class="bad">Bitte API-Key eingeben.</span>';return}sessionStorage.setItem("tr_api_test_key",k);$("keyStatus").innerHTML='<span class="good">Gespeichert.</span>'}
-window.addEventListener("load",()=>{const k=sessionStorage.getItem("tr_api_test_key");if(k)$("apiKey").value=k})
+
+$("saveKey").onclick=()=>{
+ const k=$("apiKey").value.trim();
+ if(!k){$("keyStatus").innerHTML='<span class="bad">Bitte API-Key eingeben.</span>';return}
+ sessionStorage.setItem("tr_api_test_key",k);
+ $("keyStatus").innerHTML='<span class="good">Gespeichert.</span>';
+};
+
+window.addEventListener("load",()=>{
+ const k=sessionStorage.getItem("tr_api_test_key");
+ if(k)$("apiKey").value=k;
+});
+
 $("csvFile").addEventListener("change",async e=>{
  const f=e.target.files[0];if(!f)return;
  try{
-  rows=parseCSV(await f.text());
-  const pos={};
-  for(const r of rows){if(!["STOCK","FUND"].includes(r.asset_class)||!r.symbol)continue;
-   if(!pos[r.symbol])pos[r.symbol]={isin:r.symbol,name:r.name||r.symbol,asset_class:r.asset_class,shares:0};
-   if(r.type==="BUY"||r.type==="SELL")pos[r.symbol].shares+=n(r.shares)}
-  const open=Object.values(pos).filter(x=>Math.abs(x.shares)>1e-8);
-  serviceNow=open.find(x=>x.asset_class==="STOCK"&&/service\s*now/i.test(x.name));
-  selectedETF=open.find(x=>x.asset_class==="FUND");
-  if(!serviceNow)throw new Error("ServiceNow nicht gefunden.");
-  if(!selectedETF)throw new Error("Kein offener ETF gefunden.");
-  $("selectionText").innerHTML="<b>Aktie:</b> "+esc(serviceNow.name)+"<br><b>ETF:</b> "+esc(selectedETF.name);
-  $("selectionCard").classList.remove("hidden");
-  $("fileStatus").innerHTML='<span class="good">CSV geladen.</span>';
- }catch(err){$("fileStatus").innerHTML='<span class="bad">'+esc(err.message)+'</span>'}
+   rows=parseCSV(await f.text());
+   if(!rows.length)throw new Error("CSV konnte nicht gelesen werden.");
+
+   const pos={};
+   for(const r of rows){
+     if(r.asset_class!=="STOCK"||!r.symbol)continue;
+     if(!pos[r.symbol])pos[r.symbol]={isin:r.symbol,name:r.name||r.symbol,shares:0};
+     if(r.type==="BUY"||r.type==="SELL")pos[r.symbol].shares+=n(r.shares);
+   }
+
+   serviceNow=Object.values(pos).find(x=>Math.abs(x.shares)>1e-8&&/service\s*now/i.test(x.name));
+   if(!serviceNow)throw new Error("ServiceNow wurde nicht als offene Aktienposition gefunden.");
+
+   $("selectionText").innerHTML=
+     "<b>Aktie:</b> "+esc(serviceNow.name)+" · "+esc(serviceNow.isin)+"<br>"+
+     "<b>Benchmark:</b> "+BENCH.name+" ("+BENCH.symbol+")";
+   $("testCard").classList.remove("hidden");
+   $("fileStatus").innerHTML='<span class="good">CSV geladen. ServiceNow gefunden.</span>';
+ }catch(err){
+   $("fileStatus").innerHTML='<span class="bad">'+esc(err.message)+'</span>';
+ }
 });
+
 async function td(endpoint,params={}){
- const key=apiKey();if(!key)throw new Error("Kein API-Key eingetragen.");
+ const key=apiKey();
+ if(!key)throw new Error("Kein API-Key eingetragen.");
+
  const u=new URL("https://api.twelvedata.com/"+endpoint);
  Object.entries(params).forEach(([k,v])=>{if(v!==undefined&&v!==null&&v!=="")u.searchParams.set(k,v)});
  u.searchParams.set("apikey",key);
- apiCalls++;log("Call "+apiCalls+": "+endpoint+" "+JSON.stringify(params));
+
+ apiCalls++;
+ log("Call "+apiCalls+": "+endpoint+" "+JSON.stringify(params));
+
  const res=await fetch(u,{cache:"no-store"});
  const left=res.headers.get("api-credits-left"),used=res.headers.get("api-credits-used");
  if(left||used)log("Credits used="+(used??"?")+", left="+(left??"?"));
+
  const d=await res.json();
- if(!res.ok||d.status==="error"||d.code){const m=d.message||("HTTP "+res.status);log("FEHLER: "+m);throw new Error(m)}
+ if(!res.ok||d.status==="error"||d.code){
+   const m=d.message||("HTTP "+res.status);
+   log("FEHLER: "+m);
+   throw new Error(m);
+ }
  return d;
 }
-function score(inst,c){let s=0;if(inst.asset_class==="FUND"&&c.instrument_type==="ETF")s+=40;if(inst.asset_class==="STOCK"&&c.instrument_type==="Common Stock")s+=40;if(c.currency==="EUR")s+=25;if(/xetr/i.test(c.exchange||""))s+=15;const a=inst.name.toLowerCase(),b=String(c.instrument_name||"").toLowerCase();if(b&&(a.includes(b)||b.includes(a)))s+=30;return s}
-async function resolve(inst){
- const d=await td("symbol_search",{symbol:inst.name,outputsize:20});
+
+function score(inst,c){
+ let s=0;
+ if(c.instrument_type==="Common Stock")s+=40;
+ if(c.currency==="EUR")s+=25;
+ if(/xetr/i.test(c.exchange||""))s+=15;
+ const a=String(inst.name||"").toLowerCase();
+ const b=String(c.instrument_name||"").toLowerCase();
+ if(b&&(a.includes(b)||b.includes(a)))s+=30;
+ return s;
+}
+
+async function resolveServiceNow(){
+ const d=await td("symbol_search",{symbol:serviceNow.name,outputsize:20});
  const arr=Array.isArray(d.data)?d.data:[];
- if(!arr.length)throw new Error("Keine Treffer für "+inst.name);
- arr.sort((a,b)=>score(inst,b)-score(inst,a));
- const best=arr[0];log("Zuordnung "+inst.name+" -> "+best.symbol+" @ "+(best.exchange||"-"));return best;
+ if(!arr.length)throw new Error("Keine Treffer für ServiceNow.");
+ arr.sort((a,b)=>score(serviceNow,b)-score(serviceNow,a));
+ const best=arr[0];
+ log("Zuordnung ServiceNow -> "+best.symbol+" @ "+(best.exchange||"-")+" ("+(best.currency||"-")+")");
+ return best;
 }
-async function quoteEUR(c){
- const q=await td("quote",{symbol:c.symbol,exchange:c.exchange||undefined});
- let price=n(q.close||q.price),currency=q.currency||c.currency||"";
- if(!price)throw new Error("Kein Kurs für "+c.symbol);
- if(currency&&currency!=="EUR"){await sleep(700);const fx=await td("price",{symbol:currency+"/EUR"});price*=n(fx.price)}
- return price;
+
+async function quote(symbol,exchange){
+ const q=await td("quote",{symbol,exchange});
+ const p=n(q.close||q.price);
+ if(!p)throw new Error("Kein aktueller Kurs für "+symbol);
+ return {price:p,currency:q.currency||""};
 }
+
+async function historical(symbol,exchange,startDate){
+ const d=await td("time_series",{
+   symbol,
+   exchange,
+   interval:"1day",
+   start_date:startDate,
+   outputsize:10
+ });
+ const vals=Array.isArray(d.values)?d.values:[];
+ if(!vals.length)throw new Error("Keine historischen Kurse für "+symbol);
+ const oldest=vals.slice().sort((a,b)=>a.datetime.localeCompare(b.datetime))[0];
+ return {date:oldest.datetime.slice(0,10),price:n(oldest.close)};
+}
+
+function firstServiceNowBuyDate(){
+ const buys=rows.filter(r=>
+   r.asset_class==="STOCK" &&
+   r.type==="BUY" &&
+   r.symbol===serviceNow.isin
+ ).sort((a,b)=>a.date.localeCompare(b.date));
+ return buys.length?buys[0].date:null;
+}
+
 $("runTest").onclick=async()=>{
- $("runTest").disabled=true;$("runStatus").textContent="Test läuft …";$("resultsCard").classList.add("hidden");$("log").textContent="";apiCalls=0;
+ $("runTest").disabled=true;
+ $("runStatus").textContent="Test läuft …";
+ $("resultsCard").classList.add("hidden");
+ $("log").textContent="";
+ apiCalls=0;
+
  try{
-  const sn=await resolve(serviceNow);await sleep(800);
-  const etf=await resolve(selectedETF);await sleep(800);
-  const snp=await quoteEUR(sn);await sleep(800);
-  const etfp=await quoteEUR(etf);
-  $("results").innerHTML=
-   '<div class="result"><div class="name">'+esc(serviceNow.name)+'</div><div class="grid"><div class="box"><div class="k">Ticker</div><div class="v">'+esc(sn.symbol)+'</div></div><div class="box"><div class="k">Börse</div><div class="v">'+esc(sn.exchange||"–")+'</div></div><div class="box"><div class="k">Kurs</div><div class="v">'+money(snp)+'</div></div></div></div>'+
-   '<div class="result"><div class="name">'+esc(selectedETF.name)+'</div><div class="grid"><div class="box"><div class="k">Ticker</div><div class="v">'+esc(etf.symbol)+'</div></div><div class="box"><div class="k">Börse</div><div class="v">'+esc(etf.exchange||"–")+'</div></div><div class="box"><div class="k">Kurs</div><div class="v">'+money(etfp)+'</div></div></div></div>';
-  $("resultsCard").classList.remove("hidden");$("runStatus").innerHTML='<span class="good">Test erfolgreich. '+apiCalls+' API-Aufrufe.</span>';
- }catch(err){$("runStatus").innerHTML='<span class="bad">'+esc(err.message)+'</span>'}
- finally{$("runTest").disabled=false}
+   const buyDate=firstServiceNowBuyDate();
+   if(!buyDate)throw new Error("Kein ServiceNow-Kaufdatum gefunden.");
+
+   // 1: ServiceNow auflösen
+   const sn=await resolveServiceNow();
+   await sleep(900);
+
+   // 2: aktueller ServiceNow-Kurs
+   const snNow=await quote(sn.symbol,sn.exchange||"XETR");
+   await sleep(900);
+
+   // 3: aktueller SPY-Kurs
+   const spyNow=await quote(BENCH.symbol,BENCH.exchange);
+   await sleep(900);
+
+   // 4: historische ServiceNow-Daten ab erstem Kauf
+   const snHist=await historical(sn.symbol,sn.exchange||"XETR",buyDate);
+   await sleep(900);
+
+   // 5: historische SPY-Daten ab erstem Kauf
+   const spyHist=await historical(BENCH.symbol,BENCH.exchange,buyDate);
+
+   const snPerf=(snNow.price/snHist.price-1)*100;
+   const spyPerf=(spyNow.price/spyHist.price-1)*100;
+
+   $("results").innerHTML=`
+    <div class="result">
+      <div class="name">${esc(serviceNow.name)}</div>
+      <div class="meta">${esc(serviceNow.isin)} · gefunden als ${esc(sn.symbol)} @ ${esc(sn.exchange||"–")}</div>
+      <div class="grid">
+       <div class="box"><div class="k">Historischer Kurs</div><div class="v">${snHist.price.toFixed(2)}</div><div class="meta">${snHist.date}</div></div>
+       <div class="box"><div class="k">Aktueller Kurs</div><div class="v">${snNow.price.toFixed(2)}</div></div>
+       <div class="box"><div class="k">Performance</div><div class="v">${pct(snPerf)}</div></div>
+      </div>
+    </div>
+    <div class="result">
+      <div class="name">${BENCH.name}</div>
+      <div class="meta">${BENCH.symbol} @ ${BENCH.exchange}</div>
+      <div class="grid">
+       <div class="box"><div class="k">Historischer Kurs</div><div class="v">${spyHist.price.toFixed(2)}</div><div class="meta">${spyHist.date}</div></div>
+       <div class="box"><div class="k">Aktueller Kurs</div><div class="v">${spyNow.price.toFixed(2)}</div></div>
+       <div class="box"><div class="k">Performance</div><div class="v">${pct(spyPerf)}</div></div>
+      </div>
+    </div>
+    <div class="result">
+      <div class="name">Differenz</div>
+      <div class="grid">
+       <div class="box"><div class="k">ServiceNow minus SPY</div><div class="v">${pct(snPerf-spyPerf)}-Pkt.</div></div>
+       <div class="box"><div class="k">API-Aufrufe</div><div class="v">${apiCalls}</div></div>
+      </div>
+    </div>`;
+
+   $("resultsCard").classList.remove("hidden");
+   $("runStatus").innerHTML='<span class="good">Test erfolgreich.</span>';
+ }catch(err){
+   $("runStatus").innerHTML='<span class="bad">'+esc(err.message)+'</span>';
+ }finally{
+   $("runTest").disabled=false;
+ }
+};
+</script>
+<script>
+if("serviceWorker"in navigator){
+ window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js"));
 }
 </script>
-<script>if("serviceWorker"in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js"))}</script>
 </body>
 </html>
