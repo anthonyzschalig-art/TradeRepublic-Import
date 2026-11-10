@@ -1,194 +1,30 @@
-# Trade Republic Portfolio Benchmark
+# TradeRepublic-Import v2 – Einzelaktien vs. MSCI World
 
-Eine kleine Open-Source-Web-App zur Auswertung von Einzelaktien aus einem Trade-Republic-Transaktionsexport.
+Mobile, statische Web-App (GitHub Pages). **Nur Einzelaktien** (`asset_class=STOCK`). Bitcoin/Krypto, ETFs/Fonds und Derivate sind ausgeschlossen. Die CSV bleibt lokal im Browser; der Twelve-Data-Key wird nicht in Dateien gespeichert.
 
-Die App liest einen Trade-Republic-CSV-Export ein, filtert die enthaltenen **Einzelaktien** heraus und stellt deren gemeinsame Performance einer passiven MSCI-World-Benchmark gegenüber. ETFs bzw. Fonds aus dem Export werden nicht als Teil des Einzelaktien-Portfolios ausgewertet.
+## Veröffentlichung auf GitHub (auch vom iPhone)
 
-## Was macht die App?
+1. ZIP entpacken (iOS-App **Dateien**: ZIP antippen).
+2. Repository `TradeRepublic-Import` öffnen und die Dateien `index.html`, `app.js`, `engine.js`, `manifest.json`, `service-worker.js` und `README.md` in den **Root von `main`** hochladen/ersetzen. Den Ordner `tests` musst du nicht hochladen.
+3. GitHub → Settings → Pages → Deploy from branch → `main` / `(root)`.
+4. https://anthonyzschalig-art.github.io/TradeRepublic-Import/ öffnen; bei alter Version Safari-Website-Daten löschen oder neu laden.
+5. CSV wählen, Twelve-Data-Key eingeben, Ticker/Börse/Währung aller ausgewählten Aktien prüfen und berechnen.
 
-Die App beantwortet im Kern zwei Fragen:
+## Rechenmethode
 
-1. **Wie hat sich mein Einzelaktien-Portfolio entwickelt?**
-2. **Wie hat sich der MSCI World im selben Zeitraum entwickelt?**
+- Positionen werden chronologisch aus Kauf, Verkauf, Dividende, wertloser Ausbuchung, Gegenbuchung und Gratiszuteilung rekonstruiert.
+- Aktienkäufe = externe Einzahlungen in den virtuellen **Aktien-Sleeve**, Aktienverkäufe = externe Auszahlungen. Dividenden verbleiben als EUR-Cash im Sleeve. Damit ist dies **nicht** die Rendite des gesamten Trade-Republic-Kontos.
+- Tägliche Zeitgewichtung: `r_t = (NAV_t - CF_t) / NAV_(t-1) - 1`, verkettet über Handelstage. Ein-/Auszahlungen werden zum **Tagesschluss** angenommen. Gebühren und Steuern sind in den Zahlungsbeträgen enthalten.
+- Benchmark URTH (US-ETF auf MSCI World), in EUR umgerechnet, erhält **dieselben externen Cashflows**. Er ist nicht identisch mit einem europäischen MSCI-World-ETF; ETF-Kosten, Dividendenbehandlung und Tracking-Differenz können abweichen.
+- Historische Kurse: Twelve Data. Ticker-/Börsen-/Währungszuordnung muss geprüft werden. Fehlende Kurse (über sieben Kalendertage) stoppen die Rechnung statt den Depotwert künstlich auf null zu setzen. Aktien mit problematischen Kapitalmaßnahmen müssen geklärt oder bewusst abgewählt werden. Kurshistorien müssen zur Splitbehandlung passen.
+- An Wochenenden/Feiertagen gebuchte Transaktionen werden auf den nächsten verfügbaren Benchmark-Handelstag gelegt. Das ist eine Näherung.
 
-Dafür werden zwei unterschiedliche Berechnungslogiken verwendet.
+## Wichtige Einschränkungen
 
-### Einzelaktien-Portfolio
+**Die App ist ein überprüfbarer Neuentwurf, keine geprüfte Depotabrechnung.** Die Live-Abfragen bei Twelve Data konnten in der Erstellungsumgebung nicht ausgeführt werden. Der komplette historische Verlauf ist erst nach Abruf und Prüfung der Kursdaten verifizierbar. Historische Splits, Delistings, unterschiedliche Börsenwährungen und Kapitalmaßnahmen erfordern gegebenenfalls manuelle Kontrolle. Der vollständige Export enthält beispielsweise Synbiotic-Umtausch-/Bezugsrechtsbuchungen, die ohne Klärung bewusst zu einem Stopp führen. Auch die vollständige Liquidation des Aktien-Sleeves führt derzeit zum Stopp der TWR-Verkettung statt zu einer möglicherweise irreführenden Kurve. Bei nicht mehr handelbaren Aktien können Kurse fehlen.
 
-Für das Einzelaktien-Portfolio werden die tatsächlichen Transaktionen aus dem Trade-Republic-CSV verwendet.
+**Datenschutz:** Keine CSV, kein Key und keine privaten Kontoinformationen in das öffentliche Repository hochladen. CSV-Dateien und Testdaten sind absichtlich nicht Teil des ZIP-Archivs.
 
-Berücksichtigt werden unter anderem:
+## Lokale Tests
 
-- Kaufzeitpunkte
-- Kaufbeträge
-- Stückzahlen
-- Gebühren
-- Verkäufe
-- Verkaufserlöse
-- Dividenden, soweit sie im CSV enthalten sind
-- aktuelle bzw. historische Aktienkurse
-- Währungsumrechnung von USD in EUR
-
-Die Portfolio-Performance wird **cashflow-bereinigt** dargestellt. Neue Käufe sollen also nicht wie ein Kursgewinn aussehen und Verkäufe sollen die Performance nicht künstlich verzerren.
-
-Die blaue Linie im Diagramm zeigt diesen Performanceverlauf des Einzelaktien-Portfolios.
-
-### MSCI-World-Benchmark
-
-Als Benchmark wird aktuell der **iShares MSCI World ETF (`URTH`)** verwendet.
-
-`URTH` wird in USD gehandelt. Für den Vergleich wird deshalb für jeden Börsentag zusätzlich der historische **USD/EUR-Wechselkurs** verwendet.
-
-Die Benchmark wird **nicht** anhand der Kaufzeitpunkte deiner Einzelaktien aufgebaut.
-
-Stattdessen zeigt sie die reine Entwicklung des MSCI World ab dem gewählten Startdatum:
-
-`URTH-Kurs in EUR am jeweiligen Tag / URTH-Kurs in EUR am Startdatum - 1`
-
-Die graue Linie zeigt damit:
-
-> Wie stark hätte sich ein MSCI-World-Investment seit dem gewählten Startdatum entwickelt?
-
-Spätere Käufe oder Verkäufe in deinem Einzelaktien-Portfolio haben **keinen Einfluss** auf diese Benchmark-Linie.
-
-## Was wird miteinander verglichen?
-
-Im Diagramm werden bewusst zwei unterschiedliche Perspektiven gegenübergestellt:
-
-- **Blau:** tatsächliche, cashflow-bereinigte Performance deines Einzelaktien-Portfolios
-- **Grau:** reine MSCI-World-Kursperformance seit dem Startdatum in EUR
-
-Die angezeigte Out-/Underperformance entspricht der Differenz zwischen dem aktuellen Endwert dieser beiden Performancewerte.
-
-## Zeitraum
-
-Nach dem Import des CSV wird automatisch das früheste Datum aus dem Export als Startdatum vorgeschlagen.
-
-Dieses Datum kann vor der Berechnung geändert werden.
-
-Die MSCI-World-Benchmark startet immer an diesem gewählten Datum.
-
-Für die Einzelaktien-Auswertung können nur Transaktionen berücksichtigt werden, die im vorhandenen CSV enthalten sind. Wenn eine Position bereits vor dem gewählten Startdatum bestand und die ursprünglichen Käufe im Export fehlen, kann keine vollständige und zuverlässige Performance für diese Position rekonstruiert werden.
-
-Solche Positionen können deshalb von der Auswertung ausgeschlossen werden.
-
-## Welche Daten werden ausgewertet?
-
-Berücksichtigt werden ausschließlich Transaktionen mit der Asset-Klasse:
-
-`STOCK`
-
-Transaktionen mit:
-
-`FUND`
-
-werden aus der Einzelaktien-Auswertung ausgeschlossen.
-
-Damit können ETFs weiterhin im Trade-Republic-Export enthalten sein, ohne die berechnete Einzelaktien-Performance zu beeinflussen.
-
-## Kursdaten
-
-Historische und aktuelle Kursdaten werden über **Twelve Data** geladen.
-
-Für bekannte US-Aktien werden nach Möglichkeit die US-Originalticker verwendet.
-
-Beispiele:
-
-- ServiceNow → `NOW`
-- Meta Platforms → `META`
-- Microsoft → `MSFT`
-
-Für weitere Aktien versucht die App, eine passende Kursnotierung zu finden.
-
-Wenn für eine Aktie keine nutzbaren Kursdaten verfügbar sind, wird sie von der Berechnung ausgeschlossen, ohne dass die gesamte Auswertung abgebrochen werden muss.
-
-## API-Limits
-
-Der kostenlose Twelve-Data-Zugang erlaubt nur eine begrenzte Anzahl von API-Abfragen innerhalb eines bestimmten Zeitfensters.
-
-Die App arbeitet deshalb automatisch in Blöcken.
-
-Wenn das Limit erreicht wird:
-
-- wartet die App selbstständig,
-- zeigt einen Countdown an,
-- und setzt die Berechnung anschließend automatisch fort.
-
-Es ist nicht notwendig, mehrfach auf „Berechnen“ zu drücken.
-
-## Daten und API-Key
-
-Die Anwendung läuft als clientseitige Web-App im Browser.
-
-Der ausgewählte Trade-Republic-CSV-Export wird vom JavaScript der Anwendung verarbeitet.
-
-Für Kursabfragen werden Anfragen an **Twelve Data** gesendet.
-
-Der Nutzer ist selbst dafür verantwortlich zu prüfen, welche Daten durch die verwendete Anwendung, den Browser, den Hosting-Anbieter oder externe Dienste verarbeitet oder übertragen werden.
-
-Es sollten keine Dateien, Zugangsdaten oder sonstigen Informationen verwendet oder veröffentlicht werden, deren Weitergabe nicht beabsichtigt ist.
-
-## Open Source, KI-Hinweis und Haftungsausschluss
-
-Dieses Projekt wurde mit Unterstützung generativer KI erstellt.
-
-Der Quellcode wurde nicht als professionell auditierte Finanz-, Sicherheits- oder Datenschutzsoftware entwickelt.
-
-**Vor der Nutzung, Veränderung oder Veröffentlichung sollte der Quellcode eigenständig geprüft und nachvollzogen werden.**
-
-Die Software wird ohne Gewährleistung bereitgestellt.
-
-Es wird keine Garantie für:
-
-- Richtigkeit
-- Vollständigkeit
-- Verfügbarkeit
-- Sicherheit
-- Fehlerfreiheit
-- korrekte Instrumentenzuordnung
-- korrekte Kursdaten
-- korrekte Performanceberechnung
-
-übernommen.
-
-Die dargestellten Ergebnisse dienen ausschließlich der persönlichen Auswertung und stellen **keine Anlageberatung, Finanzberatung oder Empfehlung zum Kauf oder Verkauf von Wertpapieren** dar.
-
-Die Nutzung erfolgt auf eigene Verantwortung.
-
-Insbesondere ist jeder Nutzer selbst dafür verantwortlich:
-
-- welche CSV-Dateien er in die Anwendung lädt,
-- welche API-Keys oder Zugangsdaten er verwendet,
-- welche Daten er veröffentlicht oder mit Dritten teilt,
-- den Code vor eigener Nutzung oder Veröffentlichung zu prüfen,
-- Ergebnisse und Berechnungen zu kontrollieren,
-- und die Bedingungen der verwendeten APIs, Datenanbieter und Hosting-Dienste einzuhalten.
-
-Der Autor bzw. die Mitwirkenden übernehmen, soweit rechtlich zulässig, keine Haftung für Schäden, Verluste, Fehlentscheidungen, Datenverluste oder sonstige Folgen, die aus der Nutzung des Codes oder der dargestellten Ergebnisse entstehen.
-
-## Hinweis zur Performanceberechnung
-
-Die Ergebnisse können von den Performanceangaben eines Brokers oder anderer Portfolio-Tools abweichen.
-
-Mögliche Ursachen sind unter anderem:
-
-- Gebühren
-- Steuern
-- Dividenden
-- Teilverkäufe
-- Währungsumrechnung
-- unterschiedliche Kursquellen
-- Handelszeiten
-- fehlende oder unvollständige Transaktionen
-- Rundungen
-- unterschiedliche Methoden zur Performanceberechnung
-
-Die Ergebnisse sollten deshalb vor einer weiteren Verwendung immer plausibilisiert werden.
-
-## Projektstatus
-
-Das Projekt ist experimentell und dient vor allem als persönliches Analysewerkzeug.
-
-Fehler, Sonderfälle, unvollständige Instrumentenzuordnungen und Abweichungen bei Kursdaten oder Performanceberechnungen sind möglich.
-
-Beiträge, Änderungen und Weiterentwicklungen des Codes sind ausdrücklich möglich, sollten aber eigenständig geprüft werden.
+`node tests/test-engine.js` (Node.js 18+). Testet CSV, Anlageklassenfilter, Cashflows, Ausbuchung und die Struktur des bereitgestellten Exports. Die CSV ist nicht im Projekt enthalten; der letzte Test benötigt die lokale Datei unter `/mnt/data/Transaktionsexport_Nov.csv` und ist optional bzw. muss für andere Systeme angepasst werden.
